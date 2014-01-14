@@ -1,0 +1,833 @@
+#+AUTHOR:    John Novembre
+#+EMAIL:     jnovembre@uchicago.edu
+#+DATE:      November 12, 2013
+#+DESCRIPTION:
+#+KEYWORDS:
+#+LANGUAGE:  en
+#+OPTIONS:   H:2 num:t toc:nil \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
+#+OPTIONS:   TeX:nil ``LaTeX:t skip:nil d:nil todo:f pri:nil tags:not-in-toc
+#+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+LINK_UP:
+#+LINK_HOME:
+#+LaTeX_HEADER: \usepackage{minted}
+#+LaTeX_HEADER: \usemintedstyle{default}
+#+LaTeX_HEADER: \usepackage{geometry}
+#+LaTeX_HEADER: \geometry{textwidth=6.5in,textheight=9in,marginparsep=7pt,marginparwidth=0.6in}
+#+LaTeX_HEADER: \pagestyle{empty}
+#+LaTeX_HEADER: \usepackage{graphicx}
+#+LaTeX_HEADER: \usepackage{paralist}
+#+LaTeX_HEADER: \let\itemize\compactitem
+#+LaTeX_HEADER: \let\description\compactdesc
+#+LaTeX_HEADER: \let\enumerate\compactenum
+#+LaTeX_HEADER: \usepackage[utf8]{inputenc}
+#+LaTeX_HEADER: \usepackage[T1]{fontenc}
+#+LaTeX_HEADER: \usepackage{fixltx2e}
+#+LaTeX_HEADER: \usepackage{graphicx}
+#+LaTeX_HEADER: \usepackage{longtable}
+#+LaTeX_HEADER: \usepackage{float}
+#+LaTeX_HEADER: \usepackage{wrapfig}
+#+LaTeX_HEADER: \usepackage{soul}
+#+LaTeX_HEADER: \usepackage{textcomp}
+#+LaTeX_HEADER: \usepackage{marvosym}
+#+LaTeX_HEADER: \usepackage{wasysym}
+#+LaTeX_HEADER: \usepackage{latexsym}
+#+LaTeX_HEADER: \usepackage{amssymb}
+#+LaTeX_HEADER: \usepackage{hyperref}
+#+LaTeX_HEADER: \tolerance=1000
+#+LaTeX_HEADER: \usepackage{minted}
+#+LaTeX_HEADER: \usemintedstyle{default}
+#+LaTeX_HEADER: \newtheorem{question}{Q}
+#+LaTeX_HEADER: \providecommand{\alert}[1]{\textbf{#1}}
+#+LaTeX_HEADER: \newtheorem{question}{Q}
+#+LATEX_CLASS: article
+
+#+TITLE: Workshop: Population Genetics
+
+* Notes to self: :noexport:
+** To post updated version of this workshop
+From my ~/cvs_work/sardinia_workshop directory run:
+#+begin_src sh
+rsync -avz ./ teach06@10.43.43.104:~/sardia_pop_gen_workshop
+#+end_src
+
+This workshop will take about 2.5 hours.
+
+* Data-set
+To gain some experience running some basic population genetic analyses, we
+will look at Illumina 650Y array data from the CEPH-Human Genome Diversity
+Panel.  This sample is a global-scale sampling of human diversity with
+52 populations in total.
+
+The data were generated at Stanford and are available from the
+following link:
+
+http://hagsc.org/hgdp/files.html.
+
+Genotypes were filtered with a GenCall score cutoff of 0.25 and
+individuals with call rate <98.5% were removed.  Beyond this, the set
+of individuals is filtered down to a set of 938 unrelated individuals
+and then the data are provided in plink's binary format (as files ~H938.bed~,
+~H938.fam~, ~H938.bim~).
+
+
+** Note about logistics
+You may have been given a single tarball with this workshop, or you may have downloaded it from github.  In either case, look in the ~data~ subdirectory for files.  If the ~data~ directory is empty (or if you find it is missing any files), then navigate to this link http://bit.ly/1aluTln and download all the files as a ~.zip~ and put them in the data directory.
+
+The commands below assume you are doing the exercises in a sister
+subdirectory to ~data~.  As such, binary commands are often denoted as
+being run by typing ~../bin/plink~ and the data files referenced are
+in ~../data~ for example. You may want to modify these if you are working in other directories.  You can also updating your PATH variable to make entering commands easier (look on the web to learn this).
+
+I recommend creating one subdirectory for
+each section below using the ~mkdir~ command.  Importantly the ~doc~
+subdirectory contains the text for all the R and .sh commands in files
+with ~.r~ and ~.sh~ line endings.  Finally the ~results~ subdirectory
+contains nearly all the results and intermediate output, so if you have
+trouble with any part - go there and inspect the files and output
+figures to help guide you.
+** Subset the data for European populations only
+[NOTE : This next step is read-only.  I have gone ahead and run the command and put the output in the ~data~ directory to save time].
+
+In the ~data~ directory, the ~H938.clst.txt~ file contains the specifications of each individual's population id. Using an awk command we make a list of all
+the individuals who are in the 6 Europan populations of the HGDP
+(Sardinian, Basque, Italian, Adygei, Orcadian, French).  Using plink we
+can extract just those individuals into a new set of plink files.
+#+begin_src sh :tangle yes
+awk '$3=="Sardinian"||$3=="Basque"||$3=="Italian"||$3=="Adygei"||$3=="Orcadian"||$3=="French"\
+     {print $0}' H938.clst.txt > Euro.clst.txt
+plink --bfile H938 --keep Euro.clst.txt --make-bed --out H938_Euro
+#+end_src
+
+** Filter SNPs in linkage disequilibrium
+[NOTE: Likewise, to save time this step is read-only!]
+
+We also prepare a version of each data set in which we filter out
+sites that are in linkage disequilibrium using plink's pairwise
+genotypic LD filtering commands.
+#+begin_src sh :tangle yes
+plink --bfile H938 --indep-pairwise 50 10 0.1
+plink --bfile H938 --extract plink.prune.in --make-bed --out H938.LDprune
+
+plink --bfile H938_Euro --indep-pairwise 50 10 0.1
+plink --bfile H938_Euro --extract plink.prune.in --make-bed --out H938_Euro.LDprune
+#+end_src
+The LD pruning step takes a little time, so I've provided the output
+files in the data subdirectory.
+* Exploring Hardy-Weinberg predictions
+In this section, you will assess how well the genotypes at each SNP fit
+Hardy-Weinberg proportions. Given the population structure in this
+dataset, we might have a chance to observe the -Wahlund effect- in
+which the observed propotion of heterozygotes is less than expected
+due to hidden population structure (though of another way, each
+sub-population is in a sense inbred, lowering the heterozygosity).
+
+** Using plink to get basic gentoype counts
+To begin, run the plink ~--hardy~ command.  It formally
+tests for departures from Hardy-Weinberg proportions.  To keep the
+analysis simple, use the ~--chr~ command to limit the analysis to SNPs on chromosome 2.
+#+begin_src sh :tangle yes
+plink --bfile ../data/H938 --hardy --chr 2 --out H938
+#+end_src
+
+Next, you are going to read the output of this command into R and visually
+explore the predictions of Hardy-Weinberg proportions.
+
+First - we need to deal with a pesky aspect of plink in that it tests
+HWE in cases/controls and across the whole sample ("ALL").  We want to
+look at just across the whole sample (as we don't have
+cases/controls). The grep command will pull out only the output lines with "ALL"
+in the line.
+#+begin_src sh :tangle yes
+grep ALL H938.hwe > H938.hwe_reduced
+#+end_src
+
+** Plotting in R
+Now, we will use the following R function to make a plot of the
+frequency of each genotype relative to its allele frequency (note:
+actually the code plots only a sampling of 3000 SNPs to avoid an
+overloaded plot).  (Credits to Graham Coop for this function - see his
+lab blog http://gcbias.org/ as a reference).
+
+#+begin_src r :tangle yes
+plot.geno.vs.HW<-function(file,title=""){
+
+
+    #read in the HW file from plink
+	plink.hwe<-read.table(file,as.is=TRUE)
+
+    names(plink.hwe)<-c("chr","SNP.id","which.inds","a1","a2","genotype","obs.het","exp.het","HWE.pval")
+
+	counts<-sapply(plink.hwe$genotype,function(x){as.numeric(strsplit(x,"/")[[1]])})
+	counts<-t(counts)
+	tot.counts<-rowSums(counts)
+	geno.freq<-counts/tot.counts
+	allele.freq<-(geno.freq[,1]+.5*geno.freq[,2])
+
+	these.minor<-sample(1:nrow(geno.freq),3000)
+	these.major<-sample(1:nrow(geno.freq),3000)
+	ss.allele<-c(allele.freq[these.minor],1-allele.freq[these.major])
+	ss.geno<-rbind(geno.freq[these.minor,],geno.freq[these.major,c(3,2,1)])
+
+
+    # If you have adjustcolor library installed teh following code is nice...
+	#plot(ss.allele,ss.geno[,1],xlim=c(0,1),ylim=c(0,1),col=adjustcolor("red",0.1),
+           xlab="allele frequency",ylab="genotype frequency",main=title)
+	#points(ss.allele,ss.geno[,3],xlim=c(0,1),ylim=c(0,1),col=adjustcolor("blue",0.1))
+	3points(ss.allele,ss.geno[,2],xlim=c(0,1),ylim=c(0,1),col=adjustcolor("green",0.1))
+
+    plot(ss.allele,ss.geno[,1],xlim=c(0,1),ylim=c(0,1),col="red",
+           xlab="allele frequency",ylab="genotype frequency",main=title)
+	points(ss.allele,ss.geno[,3],xlim=c(0,1),ylim=c(0,1),col="blue")
+	points(ss.allele,ss.geno[,2],xlim=c(0,1),ylim=c(0,1),col="green")
+
+	smooth=1/5
+	lines(lowess(ss.geno[,1]~ss.allele,f = smooth),col="black")
+	lines(lowess(ss.geno[,3]~ss.allele,f = smooth),col="black")
+	lines(lowess(ss.geno[,2]~ss.allele,f = smooth),col="black")
+
+	x=1:1000/1000
+	lines(x,x^2,lty=2)
+	lines(x,2*x*(1-x),lty=2)
+	lines(x,(1-x)^2,lty=2)
+	legend(x=0.3,y=1,col=c("red","blue","green",rep("black",2)),
+           legend=c("Homozygote AA","Homozygote aa","Heterozygote
+	Aa","Mean","Hardy Weinberg Expectation"),pch=c(rep(1,3),rep(NA,2)),lty=c(rep(NA,3),1,2))
+}
+
+#+end_src
+
+You can use this function directly in R to make a plot or you can produce,
+for example, a png graphic file with the plot, as shown below.
+#+begin_src r :tangle yes
+png(file="HGDP_HWE.png")
+plot.geno.vs.HW(file="H938.hwe_reduced",title="HGDP")
+dev.off()
+#+end_src
+
+#+begin_LaTeX
+\begin{question}
+Do the genotypic frequencies and allele frequencies seem to follow the
+Hardy-Weinberg proportions, at least crudely?
+\end{question}
+\begin{question}
+Looking more carefully, is the HW prediction for the proportion of heterozygotes given
+allele frequency generally too high or too low relative to the
+empirically observed values?  What might explain the deviation?
+\end{question}
+\begin{question}
+Now, go through the same steps for the H938\_Euro set of plink
+files.  Compare the deficiency in heterozygotes between the world-wide
+data and the European only data.  In which is the deficiency smaller?
+Why might that be the case?
+\end{question}
+#+end_LaTeX
+
+* Allele frequency spectra
+
+The allele frequency spectra is a count of the number of variant
+positions that have a particular allele frequency count (i.e. the
+"freqeuncy of different frequecies"!).  This is quite simple to do
+using the ~hist~ function in R to make a histogram.  The only trick is
+that there is a variable amount of missing data in the sample.  As a
+simple way to avoid this issue, let's focus only on
+SNPs that are fully observed (i.e. the total counts of individuals =
+all 938 individuals for the full data problem).
+** Computing and plotting a MAF frequency spectra
+#+begin_src r :tangle yes
+file="H938.hwe_reduced"
+
+# Read in the HWE table and compute counts and allele frequencies
+hwe<-read.table(file,as.is=TRUE)
+names(hwe)<-c("chr","SNP.id","which.inds","a1","a2","genotype","obs.het","exp.het","HWE.pval")
+counts<-sapply(hwe$genotype,function(x){as.numeric(strsplit(x,"/")[[1]])})
+counts<-t(counts)
+tot.counts<-rowSums(counts)
+allele.counts<-(2*counts[,1]+counts[,2])
+
+# Flip allele counts so that we are sure we always have the minor
+# allele frequency
+# (Note: this uses a trick based on boolean math where true/false = 1/0).
+counts.maf = allele.counts*(allele.counts<2*tot.counts-allele.counts)
++(2*tot.counts-allele.counts)*(allele.counts<2*tot.counts-allele.counts)
+
+# Set the number of individuals by looking at the sites w/ the most
+# observed data
+n=max(tot.counts)
+
+# Make the plot but filter on using only sites with fully observed
+# data (i.e. totcounts==n)
+hist(counts.maf[tot.counts==n],xlab="Minor allele count",
+ylab="# of SNPs",main="Allele frequency spectra",breaks=n)
+
+# Plot the expected minor allele frequency spectra for the standard
+# neutral model (i.e. constant size population, all loci neutral)
+# To do so we compute, Watterson's estimator of Theta
+S=sum(tot.counts==n & counts.maf>0)
+thetaW=S/sum(1/seq(1,2*n-1))
+# Which determines the expected AFS
+expectedAFS=(1/seq(1,n)+1/(n*2-seq(1,n))) * thetaW
+# And then plot
+lines(seq(1,n),expectedAFS,col=2)
+# Note: This adds a red line displaying the expected AFS shape
+# controlled to match the data w.r.t to Watterson's Theta (i.e. the total number of SNPs).
+#+end_src
+
+#+begin_LaTeX
+\begin{question}
+The distribution of MAF's does not have the shape you would expect for
+a constant-sized population.  In what ways does it depart from the
+expectation?
+\end{question}
+\begin{question}
+What is at least one plausible explanation for the departures?  (Hint:
+This is SNP array data not sequencing data).
+\end{question}
+#+end_LaTeX
+** Follow-up Activities
+*** Carry out the same exercise data with a sequencing data set (for example, 1000 Genomes data) or exome chip data.
+
+* Admixture
+Though, structure within Europe is subtle, we can run the program ~admixture~ on our set of 6 Euroepan sub-populations.  We will use K=6 and see if the method can in fact
+distinguish the 6 sub-populations.
+** Running admixture
+#+begin_src sh :tangle yes
+../bin/admixture ../data/H938_Euro.LDprune.bed 6
+#+end_src
+As it runs you will see updates describing the progress of the
+iterative optimization algorithm.  For this data, the program will run for ~100
+iterations after the five initial EM steps.  If it is taking too long
+you may want to pull the results file from the ~results/admixture~ subdirectory.
+** The results look like: :noexport:
+
+#+begin_quote
+Random seed: 43
+Point estimation method: Block relaxation algorithm
+Convergence acceleration algorithm: QuasiNewton, 3 secant conditions
+Point estimation will terminate when objective function delta < 0.0001
+Estimation of standard errors disabled; will compute point estimates only.
+Size of G: 124x63439
+Performing five EM steps to prime main algorithm
+1 (EM) 	Elapsed: 3.494	Loglikelihood: -7.63621e+06	(delta): 4.142e+06
+2 (EM) 	Elapsed: 3.759	Loglikelihood: -7.44546e+06	(delta): 190753
+3 (EM) 	Elapsed: 4.949	Loglikelihood: -7.38809e+06	(delta): 57360.9
+4 (EM) 	Elapsed: 7.541	Loglikelihood: -7.35023e+06	(delta): 37865.7
+5 (EM) 	Elapsed: 6.39	Loglikelihood: -7.32138e+06	(delta): 28850.6
+Initial loglikelihood: -7.32138e+06
+Starting main algorithm
+1 (QN/Block) 	Elapsed: 10.96	Loglikelihood: -7.18361e+06	(delta): 137765
+2 (QN/Block) 	Elapsed: 11.059	Loglikelihood: -7.16854e+06	(delta): 15076.7
+3 (QN/Block) 	Elapsed: 13.765	Loglikelihood: -7.15232e+06	(delta): 16220.3
+
+...
+92 (QN/Block) 	Elapsed: 11.035	Loglikelihood: -7.10929e+06	(delta): 0.000325421
+93 (QN/Block) 	Elapsed: 10.393	Loglikelihood: -7.10929e+06	(delta): 6.80806e-05
+Summary:
+Converged in 93 iterations (1265.03 sec)
+Loglikelihood: -7109289.381394
+Fst divergences between estimated populations:
+	Pop0	Pop1	Pop2	Pop3	Pop4
+Pop0
+Pop1	0.044
+Pop2	0.042	0.050
+Pop3	0.027	0.042	0.033
+Pop4	0.045	0.059	0.054	0.040
+Pop5	0.043	0.057	0.053	0.038	0.050
+Writing output files.
+#+end_quote
+** Note: Those Fst's seem high Especially for pop 4.               :noexport:
+** Define: EM steps; QN/Block relaxation steps                     :noexport:
+
+** Plotting the results
+When the analysis is finished, you can plot the results in a simple way using the barplot function:
+#+begin_src r :tangle yes
+# Read in matrix of inferred ancestry coefficients for each individual.
+Q=read.table("H938_Euro.LDprune.6.Q")
+Qmat=as.matrix(Q)
+barplot(t(Qmat),col=c("red","blue","gold","orange","purple","brown"),border=NA,space=0)
+#+end_src
+Or as a better approach, read in the population
+id's of each individual and plot the individuals sorted by these identfiers:
+#+begin_src r :tangle yes
+
+# To be able to label the graph we read in a
+.clst file with population "cluster" labels for each indiv
+clst=read.table("../data/Euro.clst.txt")
+# And a fam file from the plink data
+fam=read.table("../data/H938_Euro.LDprune.fam")
+
+# Use the match function to link the family ids with the cluster id
+clst_unord=clst$V3[match(fam$V2,clst$V2)]
+# Re-order alphabetically
+ordered_indices=order(clst_unord)
+QmatO=Qmat[ordered_indices,]
+
+# Compute where we will place the population labels in the barplot
+n=length(ordered_indices)
+clst_ord=clst_unord[ordered_indices]
+breaks=c(0,which(clst_ord[1:(n-1)]!=clst_ord[2:n]),n)
+nbrks=length(breaks)
+midpts=(breaks[1:(nbrks-1)]+breaks[2:nbrks])/2
+
+# Make the barplot
+barplot(t(QmatO),col=c("red","blue","yellow","orange","purple","brown"),border=NA,space=0,inside=TRUE)
+abline(v=breaks,lwd=2)
+mtext(levels(clst_ord),side=1,at=midpts,las=2)
+#+end_src
+
+#+begin_LaTeX
+\begin{question}
+Are individuals from the population isolates (Adygei, Baseque, Orcadian, and Sardian)
+inferred to have distinct ancestral populations?
+\end{question}
+#+end_LaTeX
+#+begin_LaTeX
+\begin{question}
+Are the French and Italian individuals completely distinguished as
+being from distinct populations?
+\end{question}
+#+end_LaTeX
+#+begin_LaTeX
+\begin{question}
+Which sampled population would seem to have the most internal
+population structure?
+\end{question}
+#+end_LaTeX
+
+** Follow-up Activities
+1. Run the method with K=4 and K=5 and describe results.
+2. Use the worldwide pruned LD data and run with K=6 or K=7 (i.e. revisiting Rosenberg's classic paper).
+* PCA
+Prinicpal components analysis is a commonly used way to investigate
+population structure in a sample (though it is also sensitive to close
+relatedness, batch effects, and long runs of LD, and you should watch
+for these potential effects in any analysis). Here you will run PCA on the
+Euroepan subset of the data with the LD pruned data.
+
+** Setting up a parameter file and running smartpca
+First set-up a basic smartpca parameter file. Store the following into a
+file ~H938_Euro.LDprune.par.~  This file runs smartpca in its most
+basic mode (i.e. no automatic outlier removal or adjustments for LD -
+features which you might want to explore later).
+#+begin_src sh :tangle yes
+cat > H938_Euro.LDprune.par
+genotypename: ../data/H938_Euro.LDprune.bed
+snpname: ../data/H938_Euro.LDprune.bim
+indivname: ../data/H938_Euro.LDprune.PCA.fam
+snpweightoutname: ./H938_Euro.LDprune.snpeigs
+evecoutname: ./H938_Euro.LDprune.eigs
+evaloutname: ./H938_Euro.LDprune.eval
+phylipoutname: ./H938_Euro.LDprune.fst
+numoutevec: 20
+numoutlieriter: 0
+outlieroutname: ./H938_Euro.LDprune.out
+altnormstyle: NO
+missingmode: NO
+nsnpldregress: 0
+noxdata: YES
+nomalexhet: YES
+#+end_src
+
+We need to deal with a pesky smartpca issue that will cause it to
+ignore individuals in the ~.fam~ file if they are marked as missing in
+the phenotypes column.
+#+begin_src sh :tangle yes
+# Deal with pesky smartpca ignore issue by creating new .fam file
+awk '{print $1,$2,$3,$4,$5,1}' ../data/H938_Euro.LDprune.fam > ../data/H938_Euro.LDprune.PCA.fam
+#+end_src
+
+Now run smartpca:
+#+begin_src sh :tangle yes
+smartpca -p H938_Euro.LDprune.par
+#+end_src
+** Plotting the results
+And make a plot of PC1 vs PC2.
+#+begin_src r :tangle yes
+# Read in eigenvectors file
+PCA=read.table("H938_Euro.LDprune.eigs")
+names(PCA)=c("ID",paste("PC",(1:20),sep=""),"CaseControl")
+
+# Note smartpca pushes the plink family and individual ids together so
+# we need to extract out the ids afresh; note this code works just for
+# this case
+ids=substr(PCA$ID,start=6,stop=20)
+
+# Read in clst table and fam file
+clst=read.table("../../data/Euro.clst.txt")
+# The list of countries as ordered in the fam file
+clst_unord=clst$V3[match(ids,clst$V2)]
+
+# Make a blank plot of the right size
+plot(PCA$PC2,PCA$PC1,type="n",xlab="PC2",ylab="PC1")
+# Add text labels at PC positions with abbreviations of the full
+# labels.  The substr function will be used to make automatic abbreviations.
+text(PCA$PC2,PCA$PC1,substr(clst_unord,1,2))
+#+end_src
+
+Make additional plots of PC3 vs PC4, PC5 vs PC6, and PC7 vs PC8.  When
+looking at each plot inspect each axis indepedently to understand what
+individuals each PC is distinguishing from one another.
+
+#+begin_LaTeX
+\begin{question}
+Are individuals from the population isolates (Adygei, Baseque, Orcadian, and Sardian)
+clearly separated by at least one of the top PCs you've plotted?
+\end{question}
+#+end_LaTeX
+#+begin_LaTeX
+\begin{question}
+Are the French and Italian individuals completely separated
+in at least one of the top PCs you've plotted?
+\end{question}
+#+end_LaTeX
+#+begin_LaTeX
+\begin{question}
+Do any of the PCs replicate the structure within Sardinia that was
+inferred in the admixture analysis above?
+\end{question}
+#+end_LaTeX
+#+begin_LaTeX
+\begin{question}
+Do the admixture results and PCA results seem to agree with regards to
+the relationship of the French, Italian, and Orcadian samples?
+\end{question}
+#+end_LaTeX
+
+We have looked at the top 8 PCs, but perhaps we should be looking at
+more. Plot the proportion of variance explained by each PC (i.e. the value
+of each eigenvalue normalized by the sum).
+#+begin_src r :tangle yes
+eval=read.table("H938_Euro.LDprune.eval")
+plot(1:length(eval$V1),eval$V1/sum(eval$V1),xlab="PC",ylab="Eigenvalue")
+#+end_src
+#+begin_LaTeX
+\begin{question}
+Based on the proportion of the variation explained - there are a
+number of PCs that stand out as being more relevant for explaining variation.  About how many?
+\end{question}
+#+end_LaTeX
+#+begin_LaTeX
+\begin{question}
+From your plots of PC1-PC8 you should see that the lower PCs seem to
+be picking up individual-level structure, isolating single
+individuals. At what PC does this first happen?
+\end{question}
+#+end_LaTeX
+** Follow-up Activities
+1. Read in the ~.snpeigs~ file and plot the weight of each SNP along
+   the genome for each of the top PCs.  If the spatial clustering of
+   the weights is not distributed genome-wide it may indicate a PC is
+   identifying some local genomic structure rather than genome-wide
+   structure.  For example, in many European samples, a PC might
+   indentify a common inversion polymorphism on chr 8p23 or 17q.
+2. Run PCA on the worldwide pruned LD data and inspect the results.
+
+* SPA :noexport:
+While admixture fits a model of discrete populations where individuals
+can be admixted among them, that may not be the best model for
+Europe.  Let's explore what happens with a model that assumes allele
+frequencies follow continuous gradients over geographic space.
+
+
+#+begin_src sh :tangle yes
+spa --bfile ../data/H938_Euro.LDprune --location-output
+H938_Euro.LDprune.loc --model-output H938_Euro.LDprune.model
+#+end_src
+
+#+begin_src r :tangle yes
+# Read in location file
+loc=read.table("H938_Euro.LDprune.loc")
+x=loc$V7
+y=loc$V8
+
+# Read in clst table and fam file
+clst=read.table("../data/Euro.clst.txt")
+
+
+# The list of countries as ordered in the fam file
+clst_unord=clst$V3[match(loc$V2,clst$V2)]
+
+
+plot(x,y,type="n")
+text(x,y,substr(clst_unord,1,2))
+#+end_src
+
+* Population-differentiation-based selection scan: North vs South Europe :noexport:
+One method to scan for signatures of recent positive selection is to
+look for alleles that have abnormally high levels of population
+differention.  Let's attempt this.
+
+** Subset out Italian versus Orcadian populations.  :noexport:
+#+begin_src sh :tangle yes
+grep Italian ../data/Euro.clst.txt > Italian.clst.txt
+grep Orcadian ../data/Euro.clst.txt > Orcadian.clst.txt
+
+../bin/plink --bfile ../data/H938_Euro --keep Italian.clst.txt --hardy --chr2 --out H938_Italian
+../bin/plink --bfile ../data/H938_Euro --keep Orcadian.clst.txt --hardy --chr 2 --out H938_Orcadian
+
+grep ALL H938_Italian.hwe > H938_Italian.hwe_reduced
+grep ALL H938_Orcadian.hwe > H938_Orcadian.hwe_reduced
+#+end_src
+
+** Building two ``populations'' for which we will compute pairwise Fst's based on the output of plink's --hardy command.
+#+begin_src sh :tangle yes
+# Build files for each grouping
+awk '$3=="Sardinian"||$3=="Basque"||$3=="Italian"{print $0}' ../data/Euro.clst.txt > SardBasqItal.clst.txt
+awk '$3=="Orcadian"||$3=="French"{print $0}' ../data/Euro.clst.txt > OrcadianFrench.clst.txt
+
+# Run through plink
+../bin/plink --bfile ../data/H938_Euro --keep SardBasqItal.clst.txt --hardy --chr 2 --out H938_SardBasqItal
+../bin/plink --bfile ../data/H938_Euro --keep OrcadianFrench.clst.txt --hardy --chr 2 --out H938_OrcadianFrench
+
+# Deal with the pesky --hardy output
+grep ALL H938_SardBasqItal.hwe > H938_SardBasqItal.hwe_reduced
+grep ALL H938_OrcadianFrench.hwe > H938_OrcadianFrench.hwe_reduced
+
+# It's worth having a file of all the chr 2 SNP positions for plotting later
+awk '$1==2{print $0}' ../data/H938_Euro.bim > H938_Euro_chr2.pos
+#+end_src
+
+Now in R, let's compute F_{ST} and plot it against physical position.
+#+begin_src r :tangle yes
+file1="H938_Italian.hwe_reduced"
+file2="H938_Orcadian.hwe_reduced"
+
+file1="H938_SardBasqItal.hwe_reduced"
+file2="H938_OrcadianFrench.hwe_reduced"
+
+# Extract pop1 MAF
+pop1.hwe<-read.table(file1,as.is=TRUE)
+names(pop1.hwe)<-c("chr","SNP.id","which.inds","a1","a2","genotype","obs.het","exp.het","HWE.pval")
+pop1.counts<-sapply(pop1.hwe$genotype,function(x){as.numeric(strsplit(x,"/")[[1]])})
+pop1.counts<-t(pop1.counts)
+pop1.tot.counts<-rowSums(pop1.counts)
+pop1.geno.freq<-pop1.counts/pop1.tot.counts
+pop1.allele.freq<-(pop1.geno.freq[,1]+.5*pop1.geno.freq[,2])
+
+# Extract pop2 MAF
+pop2.hwe<-read.table(file2,as.is=TRUE)
+names(pop2.hwe)<-c("chr","SNP.id","which.inds","a1","a2","genotype","obs.het","exp.het","HWE.pval")
+pop2.counts<-sapply(pop2.hwe$genotype,function(x){as.numeric(strsplit(x,"/")[[1]])})
+pop2.counts<-t(pop2.counts)
+pop2.tot.counts<-rowSums(pop2.counts)
+pop2.geno.freq<-pop2.counts/pop2.tot.counts
+pop2.allele.freq<-(pop2.geno.freq[,1]+.5*pop2.geno.freq[,2])
+
+# Note: we need to flip alleles because the minor allele in one pop
+# isn't necessarily the minor allele in another.
+pop2.allele.freq.flip=
+pop2.allele.freq*(pop1.hwe$a1==pop2.hwe$a1)+(1-pop2.allele.freq)*(pop1.hwe$a1!=pop2.hwe$a1)
+
+# Read in SNP positions table
+pos=read.table("H938_Euro_chr2.pos")
+
+# Calculate Fst w/ most basic version of F_{ST}: F_{ST} = Var(p) / (pbar*(1-pbar))
+pbar=(pop1.allele.freq+pop2.allele.freq)/2
+fst=(0.5*(pop1.allele.freq-pbar)^2+0.5*(pop2.allele.freq.flip-pbar)^2)/(pbar*(1-pbar))
+
+# Plot of fst vs. position
+plot(pos$V4,fst,col=adjustcolor("black",0.1),pch=16,xlab="Position")
+
+# Identify the most extreme outlier
+pos[which.max(fst),]
+
+pop1.hwe[pop1.hwe$SNP.id=="rs10498067",]
+pop2.hwe[pop2.hwe$SNP.id=="rs10498067",]
+
+#+end_src
+** Follow-up
+1. Repeat the activity but comparing Sardinia to all other
+   populations.
+2. What genes are in the region of the most extreme outlier SNP?
+
+* Demonstration of spurious association due to population structure [Optional]
+One consequence of population structure is that it can cause spurious
+associations with phenotypes.  In this exercise you will generate a
+phenotype that has no dependence on genetics - but that does depend on
+population membership (imagine a trait determined by diet or some
+other non-genetic factor that varies among populations).  You will try
+to map it and inspect whether the resulting association test p-values
+are consistent with the null of no genetic effects.
+** Generate a phenotype [read-only]
+First - let's make a file where each individual is assigned
+a somewhat arbitrary base phenotypic value given by what population they are
+from (Adygei = 5, Basque = 2, Italian = 5, Sardinian = 0; French = 8;
+Orcadian = 10)
+#+begin_src r :tangle yes
+awk '$3=="Adygei"{print $1,$2,5}\
+$3=="Basque"{print $1,$2,2}\
+$3=="Italian"{print $1,$2,5}\
+$3=="Sardinian"{print $1,$2,0}\
+$3=="French"{print $1,$2,8}\
+$3=="Orcadian"{print $1,$2,10}' \
+../data/Euro.clst.txt > pheno.base.txt
+#+end_src
+
+Now, using R, let's add some variation around this base value to
+produce individual-level phenotypes.  Note: Nothing genetic about this phenotype!
+#+begin_src r :tangle yes
+pheno.base=read.table("pheno.base.txt")
+# Scale the base phenotype to mean 0, sd 1
+pheno.base.scale=scale(pheno.base$V3)
+# Add some normally distributed noise (with as much variance as the base phenotype itself already has)
+pheno.sim=rnorm(length(pheno.base$V3),mean=pheno.base$V3,sd=1)
+# Output the phenotype to a file
+write.table(cbind(pheno.base[,1:2],pheno.sim),"pheno.sim.txt",quote=FALSE,row.names=FALSE,col.names=FALSE)
+#+end_src
+We will use the ~pheno.sim.txt~ as our phenotype file for mapping.
+** Map the trait using plink mapping functions
+The ~--assoc~ command in plink will produce p-values for a basic
+regression of phenotype on additive genotypic score.
+#+begin_src sh :tangle yes
+../bin/plink --bfile ../data/H938_Euro --pheno .../data/pheno.sim.txt --assoc --out H938_Euro_sim.pheno
+#+end_src
+** Exploring the results:  A Manhattan plot
+Read in the plink results contained in the ~.qassoc~ output file and
+make a Manhattan plot of the results.
+#+begin_src r :tangle yes
+qassoc=read.table("H938_Euro_sim.pheno.qassoc",header=TRUE)
+
+# Make a Manhattan plot
+# First set-up a plot of the right size
+plot(1:length(qassoc$SNP),type="n",xlab="SNP index",ylab="-log10(p-value)",ylim=c(3,max(-log10(qassoc$P),na.rm=TRUE)+1))
+# Next add the points (note: we only plot points with
+# -log10(p-value)>3 to minimze the number of points plotted)
+plot.these=which(-log10(qassoc$P)>3)
+points(plot.these,-log10(qassoc$P[plot.these]),col=1+qassoc[plot.these,"CHR"]%%2,pch=16)
+# Put in a line for a Bonferroni correction (0.05 / length(qassoc$SNP)
+abline(h=-log10(0.05/length(qassoc$SNP)),lty=2,col="gray")
+#+end_src
+
+#+begin_LaTeX
+\begin{question}
+Which chromosomes locations would you be tempted to follow up here?
+\end{question}
+#+end_LaTeX
+
+Inspect a table of the most extreme hits:
+#+begin_src r :tangle yes
+print(qassoc[head(order(qassoc$P),n=20),])
+#+end_src
+
+#+begin_LaTeX
+\begin{question}
+The peak on chromosome 6 is near what famous region?
+\end{question}
+
+\begin{question}
+The peak on chromosome 4 spans the gene for TLR6, a toll-like
+   receptor involved in bacterial recognition that was noted as being
+   highly differentied in Europe (i.e. high $F_{ST}$) by Pickrell et al
+   (2009) in their analysis of this data.  Why might a highly
+   differentiated SNP show a stronger signal of spurious association
+   than other SNPs?
+\end{question}
+#+end_LaTeX
+
+** Exploring the results: A quantile-quantile plot.
+Use the following code in R to make a plot of the observed vs. expected p-values matched by quantile.
+#+begin_src r :tangle yes
+# Read in the p-values
+qassoc=read.table("H938_Euro_sim.pheno.qassoc",header=TRUE)
+# Produce expected p-values from the null (i.e. perfectly uniformly
+# distributed).
+nTests=length(qassoc$SNP)
+Unif=seq(1/nTests,1-1/nTests,length=nTests)
+# Sort the -log10 p-values (i.e. match on quantile)
+logUnifOrder=order(-log10(Unif),decreasing=TRUE)
+SNPorder=order(-log10(qassoc$P),decreasing=TRUE)
+# Plot the p-values against against each other (Note: we do for only
+# the top 150K SNPs to make the number of points plotted smaller)
+qmax=max(-log10(qassoc$P),na.rm=TRUE)
+plot(-log10(Unif[logUnifOrder][1:150e3]),-log10(qassoc$P[SNPorder][1:150e3]),pch=16,cex=0.5,xlab="-log(p)
+Expected",ylab="-log(p) Observed",,ylim=c(0,qmax));
+# put in a line for the expected relationship (y=x)
+abline(0,1);
+# Put in a line for a Bonferroni correction (0.05 / length(qassoc$SNP)
+abline(h=-log10(0.05/length(qassoc$SNP)),lty=2,col="gray")
+#+end_src
+
+#+begin_LaTeX
+\begin{question}
+Does there appear to be evidence for a genome-wide inflation of p-values?
+\end{question}
+#+end_LaTeX
+** Follow-up Activities
+*** Simulate p-values from the null uniform distribution and draw a qq-plot.
+*** Consider how genomic control be applied in this situation to control population stratficiation.
+*** Use the PCs you've computed already (or plink's MDS functions) to rerun the association test controlling for population stratification.
+* Answers
+
+1. Yes - the genotype frequencies roughly match Hardy-Weinberg
+   expectations.  The formal significance testing results in the plink output reaffirms this.
+2. There seems to be a deficiency of heterozygotes.  This is most
+   likely due to the hidden population structure here (via the Wahlund
+   effect introduced above).
+3. The deficiency is much less - Europe has much less internal population
+   structure and thus the genotypes match the HW proportions very nicely.
+4. There is an excess of common variants and paucity of rare
+   variants.
+5. The fact that this is array data means that there is a strong
+   ascertainment bias for common variants.
+6. Yes - though the Sardinian population interesting has two ancestral populations.
+7. No - the French and Italian individuals are each inferred to have
+   substantial ancestry from a single population.
+8. The Sardinian population has two ancestral populations.
+9. Yes - though the Orcadians don't separate from French and Italian
+   substantially until PC3.
+10. PC2 nearly separates the two though the
+    distinction is not as strong as for the population isolates and
+    there is still some overlap.
+11. PC5 separates out two groups of Sardinians.  It would be
+    interesting to find out how the HGDP sampled its Sardinians and
+    what may be the causes of this cryptic structure.
+12.  Yes - both methods give the same general impression of the
+     structure within the sample, though in different form.
+13.  The top 3 PCs appear qualitatively more important than the
+     remainder.  Note that in the plots by PC3 the major populations have been
+     separated and PC4, PC5 and lower PCs predominantly separate
+     individuals within each sample.
+14.  PC6, PC7, and PC8 are picking out single Adygei individuals.  Perhaps
+     these are poorer quality samples or somehow else slightly
+     distinct from the rest of the sample.
+15.  The hits on chromosome 4, 6, 8 would be especially enticing no?
+16.  The HLA region!  Note this region is highly differentiated among
+     populations.
+17.  If a SNP is highly differentiated and its pattern of
+     differentiation happens to mirror that of a phenotype, there will
+     be a spurious result obtained in a GWAS study.
+18.  Yes - the elevation of the p-values throughout the distribution
+     is indicative of a widespread startification problem.
+
+* Figures
+** HWE
+ #+ATTR_LaTeX: :width .45\textwidth
+[[../results_answerkey/HWE/HGDP_HWE.png]]
+ #+ATTR_LaTeX: :width .45\textwidth
+[[../results_answerkey/HWE/HGDP_Euro_HWE.png]]
+** AFS
+#+ATTR_LaTeX: :width 0.85\textwidth
+[[../results_answerkey/afs/afs.png]]
+** admixture
+#+ATTR_LaTeX: :width 0.85\textwidth
+[[../results_answerkey/admixture/admixture_plot2.png]]
+** PCA
+#+ATTR_LaTeX: :width 0.45\textwidth
+[[../results_answerkey/pca/pca_plot1.png]]
+#+ATTR_LaTeX: :width 0.45\textwidth
+[[../results_answerkey/pca/pca_plot3.png]]
+
+#+ATTR_LaTeX: :width 0.45\textwidth
+[[../results_answerkey/pca/pca_plot4.png]]
+#+ATTR_LaTeX: :width 0.45\textwidth
+[[../results_answerkey/pca/pca_plot5.png]]
+
+#+ATTR_LaTeX: :width 0.45\textwidth
+[[../results_answerkey/pca/pca_plot2.png]]
+** Population stratification in GWAS
+#+ATTR_LaTeX: :width 0.85\textwidth
+[[../results_answerkey/pop_strat_gwas/pop_strat_gwas_manhattanplot.png]]
+
+#+ATTR_LaTeX: :width 0.45\textwidth
+[[../results_answerkey/pop_strat_gwas/pop_strat_gwas_qqplot.png]]
