@@ -1,0 +1,14 @@
+snpname: ../data/H938_Euro.LDprune.bim
+indivname: ../data/H938_Euro.LDprune.PCA.fam
+snpweightoutname: ./H938_Euro.LDprune.snpeigs
+evecoutname: ./H938_Euro.LDprune.eigs
+evaloutname: ./H938_Euro.LDprune.eval
+phylipoutname: ./H938_Euro.LDprune.fst
+numoutevec: 20
+numoutlieriter: 0
+outlieroutname: ./H938_Euro.LDprune.out
+altnormstyle: NO
+missingmode: NO
+nsnpldregress: 0
+noxdata: YES
+nomalexhet: YES
