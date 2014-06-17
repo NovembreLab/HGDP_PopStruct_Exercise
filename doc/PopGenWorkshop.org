@@ -53,7 +53,8 @@ rsync -avz ./ teach06@10.43.43.104:~/sardia_pop_gen_workshop
 #+end_src
 
 This workshop will take about 2.5 hours.
-
+** TODO "inside=TRUE" in barplot is apparently deprecated
+** TODO lowess function is undefined in new versions of R?
 * Data-set
 To gain some experience running some basic population genetic analyses, we
 will look at Illumina 650Y array data from the CEPH-Human Genome Diversity
@@ -126,9 +127,9 @@ sub-population is in a sense inbred, lowering the heterozygosity).
 ** Using plink to get basic gentoype counts
 To begin, run the plink ~--hardy~ command.  It formally
 tests for departures from Hardy-Weinberg proportions.  To keep the
-analysis simple, use the ~--chr~ command to limit the analysis to SNPs on chromosome 2.
+analysis simple, use the ~--chr~ command to limit the analysis to SNPs on chromosome 1.
 #+begin_src sh :tangle yes
-plink --bfile ../data/H938 --hardy --chr 2 --out H938
+plink --bfile ../data/H938 --hardy --chr 1 --out H938
 #+end_src
 
 Next, you are going to read the output of this command into R and visually
@@ -352,7 +353,7 @@ id's of each individual and plot the individuals sorted by these identfiers:
 #+begin_src r :tangle yes
 
 # To be able to label the graph we read in a
-.clst file with population "cluster" labels for each indiv
+# .clst file with population "cluster" labels for each indiv
 clst=read.table("../data/Euro.clst.txt")
 # And a fam file from the plink data
 fam=read.table("../data/H938_Euro.LDprune.fam")
@@ -406,12 +407,13 @@ for these potential effects in any analysis). Here you will run PCA on the
 Euroepan subset of the data with the LD pruned data.
 
 ** Setting up a parameter file and running smartpca
-First set-up a basic smartpca parameter file. Store the following into a
-file ~H938_Euro.LDprune.par.~  This file runs smartpca in its most
-basic mode (i.e. no automatic outlier removal or adjustments for LD -
-features which you might want to explore later).
+First set-up a basic smartpca parameter file. Use a text editor to store the following into a
+file ~H938_Euro.LDprune.par~ (try ~pico~ if you're unfamiliar with UNIX text
+editors). This file runs smartpca in its most basic mode (i.e. no automatic
+outlier removal or adjustments for LD - features which you might want to explore
+later).  Note: You may need to change ~../data/~ to reflect the real path where
+your files are.
 #+begin_src sh :tangle yes
-cat > H938_Euro.LDprune.par
 genotypename: ../data/H938_Euro.LDprune.bed
 snpname: ../data/H938_Euro.LDprune.bim
 indivname: ../data/H938_Euro.LDprune.PCA.fam
