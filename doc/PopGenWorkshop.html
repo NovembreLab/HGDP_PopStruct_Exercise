@@ -120,11 +120,11 @@ plink --bfile H938_Euro --extract plink.prune.in --make-bed --out H938_Euro.LDpr
         ss.geno&lt;-rbind(geno.freq[these.minor,],geno.freq[these.major,c(3,2,1)])
 
 
-    # If you have adjustcolor library installed teh following code is nice...
+    # If you have adjustcolor library installed the following code is nice...
         #plot(ss.allele,ss.geno[,1],xlim=c(0,1),ylim=c(0,1),col=adjustcolor(&quot;red&quot;,0.1),
            xlab=&quot;allele frequency&quot;,ylab=&quot;genotype frequency&quot;,main=title)
         #points(ss.allele,ss.geno[,3],xlim=c(0,1),ylim=c(0,1),col=adjustcolor(&quot;blue&quot;,0.1))
-        3points(ss.allele,ss.geno[,2],xlim=c(0,1),ylim=c(0,1),col=adjustcolor(&quot;green&quot;,0.1))
+        #points(ss.allele,ss.geno[,2],xlim=c(0,1),ylim=c(0,1),col=adjustcolor(&quot;green&quot;,0.1))
 
     plot(ss.allele,ss.geno[,1],xlim=c(0,1),ylim=c(0,1),col=&quot;red&quot;,
            xlab=&quot;allele frequency&quot;,ylab=&quot;genotype frequency&quot;,main=title)
