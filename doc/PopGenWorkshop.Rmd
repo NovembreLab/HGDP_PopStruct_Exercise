@@ -62,11 +62,11 @@ sites that are in linkage disequilibrium using plink's pairwise
 genotypic LD filtering commands.
 
 ```bash
-plink --bfile H938 --indep-pairwise 50 10 0.1
-plink --bfile H938 --extract plink.prune.in --make-bed --out H938.LDprune
+plink --bfile H938 --indep-pairwise 50 10 0.1 --noweb
+plink --bfile H938 --extract plink.prune.in --make-bed --out H938.LDprune --noweb
 
-plink --bfile H938_Euro --indep-pairwise 50 10 0.1
-plink --bfile H938_Euro --extract plink.prune.in --make-bed --out H938_Euro.LDprune
+plink --bfile H938_Euro --indep-pairwise 50 10 0.1 --noweb
+plink --bfile H938_Euro --extract plink.prune.in --make-bed --out H938_Euro.LDprune --noweb
 ```
 The LD pruning step takes a little time, so I've provided the output
 files in the data subdirectory.
@@ -87,7 +87,7 @@ tests for departures from Hardy-Weinberg proportions.  To keep the
 analysis simple, use the `--chr` command to limit the analysis to SNPs on chromosome 1.
 
 ```bash
-plink --bfile ../data/H938 --hardy --chr 1 --out H938
+plink --bfile ../data/H938 --hardy --chr 1 --out H938 --noweb
 ```
 
 Next, you are going to read the output of this command into R and visually
@@ -466,7 +466,7 @@ The `--assoc` command in plink will produce p-values for a basic
 regression of phenotype on additive genotypic score.
 
 ```bash
-../bin/plink --bfile ../data/H938_Euro --pheno .../data/pheno.sim.txt --assoc --out H938_Euro_sim.pheno
+../bin/plink --bfile ../data/H938_Euro --pheno .../data/pheno.sim.txt --assoc --out H938_Euro_sim.pheno --noweb
 ```
 ### Exploring the results:  A Manhattan plot
 
