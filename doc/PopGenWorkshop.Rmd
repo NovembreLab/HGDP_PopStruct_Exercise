@@ -1,3 +1,6 @@
+---
+output: pdf_document
+---
 
 # HGDP Population Structure Workshop
 
