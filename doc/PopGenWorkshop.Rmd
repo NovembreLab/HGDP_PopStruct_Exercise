@@ -466,7 +466,7 @@ The `--assoc` command in plink will produce p-values for a basic
 regression of phenotype on additive genotypic score.
 
 ```bash
-../bin/plink --bfile ../data/H938_Euro --pheno .../data/pheno.sim.txt --assoc --out H938_Euro_sim.pheno --noweb
+plink --bfile ../data/H938_Euro --pheno .../data/pheno.sim.txt --assoc --out H938_Euro_sim.pheno --noweb
 ```
 ### Exploring the results:  A Manhattan plot
 
