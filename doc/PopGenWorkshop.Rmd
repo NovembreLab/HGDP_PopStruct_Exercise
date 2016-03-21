@@ -203,7 +203,7 @@ allele.counts<-(2*counts[,1]+counts[,2])
 # Flip allele counts so that we are sure we always have the minor
 # allele frequency
 # (Note: this uses a trick based on boolean math where true/false = 1/0).
-counts.maf = allele.counts*(allele.counts<2*tot.counts-allele.counts)+(2*tot.counts-allele.counts)*(allele.counts<2*tot.counts-allele.counts)
+counts.maf = allele.counts*(allele.counts<=2*tot.counts-allele.counts)+(2*tot.counts-allele.counts)*(allele.counts>2*tot.counts-allele.counts)
 
 # Set the number of individuals by looking at the sites w/ the most
 # observed data
