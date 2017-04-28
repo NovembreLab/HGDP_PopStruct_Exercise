@@ -80,7 +80,7 @@ In this section, you will assess how well the genotypes at each SNP fit
 Hardy-Weinberg proportions. Given the population structure in this
 dataset, we might have a chance to observe the -Wahlund effect- in
 which the observed propotion of heterozygotes is less than expected
-due to hidden population structure (though of another way, each
+due to hidden population structure (thought of another way, each
 sub-population is in a sense inbred, lowering the heterozygosity).
 
 ### Using plink to get basic gentoype counts
@@ -90,7 +90,7 @@ tests for departures from Hardy-Weinberg proportions.  To keep the
 analysis simple, use the `--chr` command to limit the analysis to SNPs on chromosome 2.
 
 ```bash
-plink --bfile ../data/H938_Euro --hardy --chr 2 --out H938_Euro --noweb
+plink --bfile ~/shared_data/HGDP_Data/H938 --hardy --chr 2 --noweb --out H938
 ```
 
 Next, you are going to read the output of this command into R and visually
@@ -99,11 +99,11 @@ explore the predictions of Hardy-Weinberg proportions.
 First - we need to deal with a pesky aspect of plink in that it tests
 HWE in cases/controls and across the whole sample ("ALL").  We want to
 look at just across the whole sample (as we don't have
-cases/controls). The grep command will pull out only the output lines with "ALL"
+cases/controls). The `grep` command will pull out only the output lines with "ALL"
 in the line.
 
 ```bash
-grep ALL H938_Euro.hwe > H938_Euro.hwe_reduced
+grep ALL H938.hwe > H938.hwe_reduced
 ```
 
 ### Plotting in R
@@ -121,7 +121,8 @@ plot.geno.vs.HW<-function(file,title=""){
 	#read in the HW file from plink
 	    plink.hwe<-read.table(file,as.is=TRUE)
 
-	names(plink.hwe)<-c("chr","SNP.id","which.inds","a1","a2","genotype","obs.het","exp.het","HWE.pval")
+	    names(plink.hwe)<-c("chr","SNP.id","which.inds","a1","a2",
+	      "genotype","obs.het","exp.het","HWE.pval")
 
 	    counts<-sapply(plink.hwe$genotype,function(x){as.numeric(strsplit(x,"/")[[1]])})
 	    counts<-t(counts)
@@ -153,10 +154,9 @@ plot.geno.vs.HW<-function(file,title=""){
 	    lines(x,x^2,lty=2)
 	    lines(x,2*x*(1-x),lty=2)
 	    lines(x,(1-x)^2,lty=2)
-	    legend(x=0.3,y=1,col=c("red","blue","green",rep("black",2)), 
-	      legend=c("Homozygote AA","Homozygote aa","Heterozygote
-	      Aa","Mean","Hardy Weinberg Expectation"), 
-	      pch=c(rep(1,3),rep(NA,2)),lty=c(rep(NA,3),1,2))
+	    legend(x=0.3,y=1,col=c("red","blue","green",rep("black",2)),
+	      legend=c("Homozygote AA","Homozygote aa","Heterozygote Aa","Mean","Hardy Weinberg Expectation"),
+	      pch=c(rep(1,3),rep(NA,2)),lty=c(rep(NA,3),1,2), cex=0.5, pt.cex = 1)
     }
 ```
 
@@ -164,68 +164,71 @@ You can use this function directly in R to make a plot or you can produce,
 for example, a png graphic file with the plot, as shown below.
 
 ```R
-png(file="HGDP_Euro_HWE.png")
-plot.geno.vs.HW(file="H938_Euro.hwe_reduced",title="HGDP (EURO)")
+png(file="HGDP_hwe.png")
+plot.geno.vs.HW(file="H938.hwe_reduced",title="HGDP")
 dev.off()
 ```
 
 
 #### Questions
 
-1. Do the genotypic frequencies roughly follow the basic patterns expected for Hardy-Weinberg proportions (e.g. PAA is approximately quadratic in p)?
+1. Do the genotypic frequencies roughly follow the basic patterns expected for Hardy-Weinberg proportions (e.g. $P_{AA}$ is approximately quadratic in p)?
 
 2. Looking more carefully, is the HW prediction for the proportion of heterozygotes given allele frequency generally too high or too low relative to the empirically observed values? What might explain the deviation?
 
-3. Now, go through the same steps for the full H938 set of plink files (since the files were too big upload to github, please look at `results_answerkey/HWE/H938.hwe_reduced` in order to make your plot). Compare the deficiency in heterozygotes between the world-wide data and the European only data. In which is the deficiency smaller? Why might that be the case?
+3. Now, go through the same steps for the full H938_Euro set of plink files. Compare the deficiency in heterozygotes between the world-wide data and the European only data. In which is the deficiency smaller? Why might that be the case?
 
 ## Allele frequency spectra
 
 The allele frequency spectra is a count of the number of variant
 positions that have a particular allele frequency count (i.e. the
-"freqeuncy of different frequecies"!).  This is quite simple to do
+"freqeuncy of different frequecies"!).  This can be done
 using the `hist` function in R to make a histogram.  The only trick is
 that there is a variable amount of missing data in the sample.  As a
-simple way to avoid this issue, let's focus only on
+way to avoid this issue, let's focus only on
 SNPs that are fully observed (i.e. the total counts of individuals =
 all 938 individuals for the full data problem).
 
 ### Computing and plotting a MAF frequency spectra
 
 ```R
-file="results_answerkey/HWE/H938.hwe_reduced"
+plot.MAF <- function(file){
+  # Read in the HWE table and compute counts and allele frequencies
+  hwe<-read.table(file,as.is=TRUE)
+  names(hwe)<-c("chr","SNP.id","which.inds","a1","a2","genotype","obs.het","exp.het","HWE.pval")
+  counts<-sapply(hwe$genotype,function(x){as.numeric(strsplit(x,"/")[[1]])})
+  counts<-t(counts)
+  tot.counts<-rowSums(counts)
+  allele.counts<-(2*counts[,1]+counts[,2])
 
-# Read in the HWE table and compute counts and allele frequencies
-hwe<-read.table(file,as.is=TRUE)
-names(hwe)<-c("chr","SNP.id","which.inds","a1","a2","genotype","obs.het","exp.het","HWE.pval")
-counts<-sapply(hwe$genotype,function(x){as.numeric(strsplit(x,"/")[[1]])})
-counts<-t(counts)
-tot.counts<-rowSums(counts)
-allele.counts<-(2*counts[,1]+counts[,2])
+  # Flip allele counts so that we are sure we always have the minor
+  # allele frequency
+  # (Note: this uses a trick based on boolean math where true/false = 1/0).
+  counts.maf = allele.counts*(allele.counts<=2*tot.counts-allele.counts) + (2*tot.counts-allele.counts)*(allele.counts>2*tot.counts-allele.counts)
 
-# Flip allele counts so that we are sure we always have the minor
-# allele frequency
-# (Note: this uses a trick based on boolean math where true/false = 1/0).
-counts.maf = allele.counts*(allele.counts<=2*tot.counts-allele.counts) + (2*tot.counts-allele.counts)*(allele.counts>2*tot.counts-allele.counts)
+  # Set the number of individuals by looking at the sites w/ the most
+  # observed data
+  n=max(tot.counts)
 
-# Set the number of individuals by looking at the sites w/ the most
-# observed data
-n=max(tot.counts)
+  # Make the plot but filter on using only sites with fully observed
+  # data (i.e. totcounts==n)
+  hist(counts.maf[tot.counts==n],
+   xlab="Minor allele count", 
+   ylab="# of SNPs",
+   main="Allele frequency spectra",breaks=n)
 
-# Make the plot but filter on using only sites with fully observed
-# data (i.e. totcounts==n)
-hist(counts.maf[tot.counts==n],xlab="Minor allele count", ylab="# of SNPs",main="Allele frequency spectra",breaks=n)
-
-# Plot the expected minor allele frequency spectra for the standard
-# neutral model (i.e. constant size population, all loci neutral)
-# To do so we compute, Watterson's estimator of Theta
-S=sum(tot.counts==n & counts.maf>0)
-thetaW=S/sum(1/seq(1,2*n-1))
-# Which determines the expected AFS
-expectedAFS=(1/seq(1,n)+1/(n*2-seq(1,n))) * thetaW
-# And then plot
-lines(seq(1,n),expectedAFS,col=2)
-# Note: This adds a red line displaying the expected AFS shape
-# controlled to match the data w.r.t to Watterson's Theta (i.e. the total number of SNPs).
+  # Plot the expected minor allele frequency spectra for the standard
+  # neutral model (i.e. constant size population, all loci neutral)
+  # To do so we compute, Watterson's estimator of Theta
+  S=sum(tot.counts==n & counts.maf>0)
+  thetaW=S/sum(1/seq(1,2*n-1))
+  # Which determines the expected AFS
+  expectedAFS=(1/seq(1,n)+1/(n*2-seq(1,n))) * thetaW
+  # And then plot
+  lines(seq(1,n),expectedAFS,col=2)
+  # Note: This adds a red line displaying the expected AFS shape
+  # controlled to match the data w.r.t to Watterson's Theta (i.e. the total number of SNPs).
+}
 ```
 
 
@@ -256,7 +259,7 @@ distinguish the 6 sub-populations.
 As it runs you will see updates describing the progress of the
 iterative optimization algorithm.  For this data, the program will run for ~100
 iterations after the five initial EM steps.  If it is taking too long
-you may want to pull the results file from the `results/admixture` subdirectory.
+you may want to pull the results file from the `~/shared_data/HGDP_Data/admixture_files` subdirectory.
 
 ### Plotting the results
 
@@ -272,29 +275,39 @@ Or as a better approach, read in the population
 id's of each individual and plot the individuals sorted by these identfiers:
 
 ```R
-# To be able to label the graph we read in a
-# .clst file with population "cluster" labels for each indiv
-clst=read.table("../data/Euro.clst.txt")
-# And a fam file from the plink data
-fam=read.table("../data/H938_Euro.LDprune.fam")
 
-# Use the match function to link the family ids with the cluster id
-clst_unord=clst$V3[match(fam$V2,clst$V2)]
-# Re-order alphabetically
-ordered_indices=order(clst_unord)
-QmatO=Qmat[ordered_indices,]
 
-# Compute where we will place the population labels in the barplot
-n=length(ordered_indices)
-clst_ord=clst_unord[ordered_indices]
-breaks=c(0,which(clst_ord[1:(n-1)]!=clst_ord[2:n]),n)
-nbrks=length(breaks)
-midpts=(breaks[1:(nbrks-1)]+breaks[2:nbrks])/2
-
-# Make the barplot
-barplot(t(QmatO),col=c("red","blue","yellow","orange","purple","brown"),border=NA,space=0,inside=TRUE)
-abline(v=breaks,lwd=2)
-mtext(levels(clst_ord),side=1,at=midpts,las=2)
+plot.admixture.labeled <- function(clst_file, fam_file, q_file){
+  #Read in the Qmatrix
+  Q = read.table(q_file)
+  Qmat = as.matrix(Q)
+  
+  # To be able to label the graph we read in a
+  # .clst file with population "cluster" labels for each indiv
+  clst = read.table(clst_file)
+  
+  # And a fam file from the plink data
+  fam = read.table(fam_file)
+  
+  # Use the match function to link the family ids with the cluster id
+  clst_unord=clst$V3[match(fam$V2,clst$V2)]
+  
+  # Re-order alphabetically
+  ordered_indices=order(clst_unord)
+  QmatO=Qmat[ordered_indices,]
+  
+  # Compute where we will place the population labels in the barplot
+  n=length(ordered_indices)
+  clst_ord=clst_unord[ordered_indices]
+  breaks=c(0,which(clst_ord[1:(n-1)]!=clst_ord[2:n]),n)
+  nbrks=length(breaks)
+  midpts=(breaks[1:(nbrks-1)]+breaks[2:nbrks])/2
+  
+  # Make the barplot
+  barplot(t(QmatO),col=c("red","blue","yellow","orange","purple","brown"),border=NA,space=0,inside=TRUE)
+  abline(v=breaks,lwd=2)
+  mtext(levels(clst_ord),side=1,at=midpts,las=2)
+}
 ```
 
 #### Questions
@@ -308,7 +321,9 @@ mtext(levels(clst_ord),side=1,at=midpts,las=2)
 
 1.  Run the method with K=4 and K=5 and describe results.
 
-2.  Use the worldwide pruned LD data and run with K=6 or K=7 (i.e. revisiting Rosenberg's classic paper).
+2.  Use the worldwide pruned LD data and run with K=6 or K=7 (i.e. revisiting Rosenberg's classic paper). [Note : this will take a while, best to run it on your own computer, or use a different algorithm like `teraStructure`]
+
+3. 
 
 ## PCA
 
@@ -401,6 +416,7 @@ of each eigenvalue normalized by the sum).
 
 #### Questions (Part B)
 1. Based on the proportion of the variation explained - there are a number of PCs that stand out as being more relevant for explaining variation. About how many?
+
 2. From your plots of PC1-PC8 you should see that the lower PCs seem to be picking up individual-level structure, isolating single individuals. At what PC does this first happen?
 
 ```R
@@ -420,7 +436,7 @@ of each eigenvalue normalized by the sum).
 
 2.  Run PCA on the worldwide pruned LD data and inspect the results.
 
-## Demonstration of spurious association due to population structure [Optional]
+## Demonstration of spurious association due to population structure [Take-Home]
 
 One consequence of population structure is that it can cause spurious
 associations with phenotypes.  In this exercise you will generate a
@@ -534,7 +550,7 @@ abline(h=-log10(0.05/length(qassoc$SNP)),lty=2,col="gray")
 
 1. Does there appear to be evidence for a genome-wide inflation of p-values?
 
-#### Follow-up Activities (Optional)
+#### Follow-up Activities
 
 1.  Simulate p-values from the null uniform distribution and draw a qq-plot.
 
@@ -542,114 +558,6 @@ abline(h=-log10(0.05/length(qassoc$SNP)),lty=2,col="gray")
 
 3.  Use the PCs you've computed already (or plink's MDS functions) to rerun the association test controlling for population stratification.
 
-## Answers
 
 
-#### HWE
 
-
-1.  Yes - the genotype frequencies roughly match Hardy-Weinberg
-    expectations in that the basic shapes of the curves are correct.  
-
-2.  There seems to be a deficiency of heterozygotes.  This is most
-    likely due to the hidden population structure here (via the Wahlund
-    effect introduced above).
-
-3.  The deficiency is much less - Europe has much less internal population
-    structure and thus the genotypes match the HW proportions very nicely.  One could inspect the distributionss of p-values of the associated formal tests of Hardy-Weinberg to more formally support these answers.
-
-#### AFS
-
-1.  There is an excess of common variants and paucity of rare
-    variants.
-
-2.  For most genotyping arrays used in human genetics, the design of the array is such that common variants are favored over rares when choosing which variants to probe.  This is usually because a small set of individuals was used for variant discovery, and as a result only variants sites with common alleles are discovered. 
-
-#### admixture
-
-
-1.  Yes - though the Sardinian population interesting has two ancestral populations.
-
-2.  No - the French and Italian individuals are each inferred to have
-    substantial ancestry from a single population.
-
-3.  The Sardinian population has two ancestral populations.
-
-#### PCA (Part A)
-
-1.  Yes - though the Orcadians don't separate from French and Italian
-    substantially until PC3.
-
-2. PC2 nearly separates the two though the
-    distinction is not as strong as for the population isolates and
-    there is still some overlap.
-
-3. PC5 separates out two groups of Sardinians.  It would be
-    interesting to find out how the HGDP sampled its Sardinians and
-    what may be the causes of this cryptic structure.
-
-4. Yes - both methods give the same general impression of the
-    structure within the sample, though in different form.
-
-#### PCA (Part B)
-
-1. The top 3 PCs appear qualitatively more important than the
-    remainder.  Note that in the plots by PC3 the major populations have been
-    separated and PC4, PC5 and lower PCs predominantly separate
-    individuals within each sample.
-
-2. PC6, PC7, and PC8 are picking out single Adygei individuals.  Perhaps
-    these are poorer quality samples or somehow else slightly
-    distinct from the rest of the sample.
-
-#### Population stratification in GWAS (Part A)
-
-1. The hits on chromosome 4, 6, 8 would be especially enticing no?
-
-#### Population stratification in GWAS (Part B)
-
-1. The HLA region!  Note this region is highly differentiated among
-    populations.
-
-2. If a SNP is highly differentiated and its pattern of
-    differentiation happens to mirror that of a phenotype, there will
-    be a spurious result obtained in a GWAS study.
-
-#### Population stratification in GWAS (Part C)
-
-1. Yes - the elevation of the p-values throughout the distribution
-    is indicative of a widespread startification problem.
-
-## Figures
-
-#### HWE
-
-![nil](../results_answerkey/HWE/HGDP_HWE.png)
-
-![nil](../results_answerkey/HWE/HGDP_Euro_HWE.png)
-
-#### AFS
-
-![nil](../results_answerkey/afs/afs.png)
-
-#### admixture
-
-![nil](../results_answerkey/admixture/admixture_plot2.png)
-
-#### PCA
-
-![nil](../results_answerkey/pca/pca_plot1.png)
-
-![nil](../results_answerkey/pca/pca_plot3.png)
-
-![nil](../results_answerkey/pca/pca_plot4.png)
-
-![nil](../results_answerkey/pca/pca_plot5.png)
-
-![nil](../results_answerkey/pca/pca_plot2.png)
-
-#### Population stratification in GWAS
-
-![nil](../results_answerkey/pop_strat_gwas/pop_strat_gwas_manhattanplot.png)
-
-![nil](../results_answerkey/pop_strat_gwas/pop_strat_gwas_qqplot.png)
