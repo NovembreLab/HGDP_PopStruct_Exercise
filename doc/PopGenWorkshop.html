@@ -132,7 +132,7 @@ $(document).ready(function () {
 <h3>Note about logistics</h3>
 <p>You may have been given a single tarball with this workshop, or you may have downloaded it from github. In either case, look in the <code>data</code> subdirectory for files. If the <code>data</code> directory is empty (or if you find it is missing any files referred to below, eg, the H938… or H938_Euro… files), then navigate to this link <a href="http://bit.ly/1aluTln" class="uri">http://bit.ly/1aluTln</a> and download all the files as a <code>.zip</code> and put them in the data directory.</p>
 <p>The commands below assume you are doing the exercises in a sister subdirectory to <code>data</code>. As such, binary commands are often denoted as being run by typing <code>../bin/plink</code> and the data files referenced are in <code>../data</code> for example. You may want to modify these if you are working in other directories. You can also updating your PATH variable to make entering commands easier (look on the web to learn this).</p>
-<p>I recommend creating one subdirectory for each section below using the <code>mkdir</code> command. Finally the <code>results</code> subdirectory contains nearly all the results and intermediate output, so if you have trouble with any part - go there and inspect the files and output figures to help guide you.</p>
+<p>I recommend creating one subdirectory for each section below using the <code>mkdir</code> command.</p>
 </div>
 <div id="subset-the-data-for-european-populations-only-read-only" class="section level3">
 <h3>Subset the data for European populations only [read-only]</h3>
@@ -193,22 +193,23 @@ plink --bfile H938_Euro --extract plink.prune.in --make-bed --out H938_Euro.LDpr
         #points(ss.allele,ss.geno[,3],xlim=c(0,1),ylim=c(0,1),col=adjustcolor(&quot;blue&quot;,0.1))
         #points(ss.allele,ss.geno[,2],xlim=c(0,1),ylim=c(0,1),col=adjustcolor(&quot;green&quot;,0.1))
 
-    plot(ss.allele,ss.geno[,1],xlim=c(0,1),ylim=c(0,1),col=&quot;red&quot;, xlab=&quot;allele frequency&quot;,ylab=&quot;genotype frequency&quot;,main=title)
-        points(ss.allele,ss.geno[,3],xlim=c(0,1),ylim=c(0,1),col=&quot;blue&quot;)
-        points(ss.allele,ss.geno[,2],xlim=c(0,1),ylim=c(0,1),col=&quot;green&quot;)
+    plot(ss.allele,ss.geno[,1], xlim=c(0,1), ylim=c(0,1), col=&quot;red&quot;, 
+      xlab=&quot;allele frequency&quot;,ylab=&quot;genotype frequency&quot;,main=title)
+    points(ss.allele,ss.geno[,3],xlim=c(0,1),ylim=c(0,1),col=&quot;blue&quot;)
+    points(ss.allele,ss.geno[,2],xlim=c(0,1),ylim=c(0,1),col=&quot;green&quot;)
 
-        smooth=1/5
-        lines(lowess(ss.geno[,1]~ss.allele,f = smooth),col=&quot;black&quot;)
-        lines(lowess(ss.geno[,3]~ss.allele,f = smooth),col=&quot;black&quot;)
-        lines(lowess(ss.geno[,2]~ss.allele,f = smooth),col=&quot;black&quot;)
+    smooth=1/5
+    lines(lowess(ss.geno[,1]~ss.allele,f = smooth),col=&quot;black&quot;)
+    lines(lowess(ss.geno[,3]~ss.allele,f = smooth),col=&quot;black&quot;)
+    lines(lowess(ss.geno[,2]~ss.allele,f = smooth),col=&quot;black&quot;)
 
-        x=1:1000/1000
-        lines(x,x^2,lty=2)
-        lines(x,2*x*(1-x),lty=2)
-        lines(x,(1-x)^2,lty=2)
-        legend(x=0.3,y=1,col=c(&quot;red&quot;,&quot;blue&quot;,&quot;green&quot;,rep(&quot;black&quot;,2)),
-          legend=c(&quot;Homozygote AA&quot;,&quot;Homozygote aa&quot;,&quot;Heterozygote Aa&quot;,&quot;Mean&quot;,&quot;Hardy Weinberg Expectation&quot;),
-          pch=c(rep(1,3),rep(NA,2)),lty=c(rep(NA,3),1,2), cex=0.5, pt.cex = 1)
+    x=1:1000/1000
+    lines(x,x^2,lty=2)
+    lines(x,2*x*(1-x),lty=2)
+    lines(x,(1-x)^2,lty=2)
+    legend(x=0.3,y=1,col=c(&quot;red&quot;,&quot;blue&quot;,&quot;green&quot;,rep(&quot;black&quot;,2)),
+      legend=c(&quot;Homozygote AA&quot;,&quot;Homozygote aa&quot;,&quot;Heterozygote Aa&quot;,&quot;Mean&quot;,&quot;Hardy Weinberg Expectation&quot;),
+      pch=c(rep(1,3),rep(NA,2)),lty=c(rep(NA,3),1,2), cex=0.5, pt.cex = 1)
     }</code></pre>
 <p>You can use this function directly in R to make a plot or you can produce, for example, a png graphic file with the plot, as shown below.</p>
 <pre class="r"><code>png(file=&quot;HGDP_hwe.png&quot;)
@@ -515,8 +516,8 @@ abline(h=-log10(0.05/length(qassoc$SNP)),lty=2,col=&quot;gray&quot;)</code></pre
 <h4>Follow-up Activities</h4>
 <ol style="list-style-type: decimal">
 <li><p>Simulate p-values from the null uniform distribution and draw a qq-plot.</p></li>
-<li><p>Consider how genomic control be applied in this situation to control population stratficiation.</p></li>
-<li><p>Use the PCs you’ve computed already (or plink’s MDS functions) to rerun the association test controlling for population stratification.</p></li>
+<li><p>Consider how genomic control be applied in this situation to control population stratficiation (See Price et al. Nature Reviews Genetics to get a better idea of genomic control)</p></li>
+<li><p>Use the PCs you’ve computed already (or plink’s MDS functions) to rerun the association test controlling for population stratification and plot a QQ-plot</p></li>
 </ol>
 </div>
 </div>
