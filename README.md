@@ -1,3 +1,5 @@
+[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/jhmarcus/HGDP_PopStruct_Exercise/master)
+
 # HGDP_PopStruct_Exercise
 
 A computer lab exercise that introduces students to SNP data while exploring topics related to population structure. 
