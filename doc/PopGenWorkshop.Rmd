@@ -46,7 +46,7 @@ the individuals who are in the 6 Europan populations of the HGDP
 (Sardinian, Basque, Italian, Adygei, Orcadian, French).  Using plink we
 can extract just those individuals into a new set of plink files.
 
-```{bash}
+```bash
 awk '$3=="Sardinian"||$3=="Basque"||$3=="Italian"||$3=="Adygei"||$3=="Orcadian"||$3=="French"\
   {print $0}' H938.clst.txt > Euro.clst.txt
 plink --bfile H938 --keep Euro.clst.txt --make-bed --out H938_Euro
@@ -61,7 +61,7 @@ We also prepare a version of each data set in which we filter out
 sites that are in linkage disequilibrium using plink's pairwise
 genotypic LD filtering commands.
 
-```{bash}
+```bash
 plink --bfile H938 --indep-pairwise 50 10 0.1 --noweb
 plink --bfile H938 --extract plink.prune.in --make-bed --out H938.LDprune --noweb
 
@@ -245,7 +245,7 @@ distinguish the 6 sub-populations.
 
 ### Running admixture
 
-```bash
+```{bash}
 ../bin/admixture ../data/H938_Euro.LDprune.bed 6
 ```
 
@@ -314,7 +314,7 @@ relatedness, batch effects, and long runs of LD, and you should watch
 for these potential effects in any analysis). Here you will run PCA on the
 Euroepan subset of the data with the LD pruned data.
 
-### Setting up a parameter file and running smartpca
+### Setting up a parameter file and running smartpca [read-only]
 
 First set-up a basic smartpca parameter file. Use a text editor to store the following into a
 file `H938_Euro.LDprune.par` (try `pico` if you're unfamiliar with UNIX text
@@ -344,14 +344,14 @@ We need to deal with a pesky smartpca issue that will cause it to
 ignore individuals in the `.fam` file if they are marked as missing in
 the phenotypes column.
 
-```{bash}
+```bash
 # Deal with pesky smartpca ignore issue by creating new .fam file
 awk '{print $1,$2,$3,$4,$5,1}' ../data/H938_Euro.LDprune.fam > ../data/H938_Euro.LDprune.PCA.fam
 ```
 
 Now run smartpca:
 
-```{bash}
+```bash
 smartpca -p H938_Euro.LDprune.par
 ```
 ### Plotting the results
@@ -360,7 +360,7 @@ And make a plot of PC1 vs PC2.
 
 ```{R}
 # Read in eigenvectors file
-PCA=read.table("H938_Euro.LDprune.eigs")
+PCA=read.table("../results/pca/H938_Euro.LDprune.eigs")
 names(PCA)=c("ID",paste("PC",(1:20),sep=""),"CaseControl")
 
 # Note smartpca pushes the plink family and individual ids together so
@@ -395,14 +395,14 @@ We have looked at the top 8 PCs, but perhaps we should be looking at
 more. Plot the proportion of variance explained by each PC (i.e. the value
 of each eigenvalue normalized by the sum).
 
+```{R}
+    eval=read.table("../results/pca/H938_Euro.LDprune.eval")
+    plot(1:length(eval$V1),eval$V1/sum(eval$V1),xlab="PC",ylab="Eigenvalue")
+```
+
 #### Questions (Part B)
 1. Based on the proportion of the variation explained - there are a number of PCs that stand out as being more relevant for explaining variation. About how many?
 2. From your plots of PC1-PC8 you should see that the lower PCs seem to be picking up individual-level structure, isolating single individuals. At what PC does this first happen?
-
-```{R}
-    eval=read.table("H938_Euro.LDprune.eval")
-    plot(1:length(eval$V1),eval$V1/sum(eval$V1),xlab="PC",ylab="Eigenvalue")
-```
 
 
 #### Follow-up Activities (Optional)
@@ -416,7 +416,7 @@ of each eigenvalue normalized by the sum).
 
 2.  Run PCA on the worldwide pruned LD data and inspect the results.
 
-## Demonstration of spurious association due to population structure [Optional]
+## Demonstration of spurious association due to population structure
 
 One consequence of population structure is that it can cause spurious
 associations with phenotypes.  In this exercise you will generate a
@@ -433,7 +433,7 @@ a somewhat arbitrary base phenotypic value given by what population they are
 from (Adygei = 5, Basque = 2, Italian = 5, Sardinian = 0; French = 8;
 Orcadian = 10)
 
-```{bash}
+```bash
 awk '$3=="Adygei"{print $1,$2,5}\
      $3=="Basque"{print $1,$2,2}\
      $3=="Italian"{print $1,$2,5}\
@@ -446,7 +446,7 @@ awk '$3=="Adygei"{print $1,$2,5}\
 Now, using R, let's add some variation around this base value to
 produce individual-level phenotypes.  Note: Nothing genetic about this phenotype!
 
-```{R}
+```R
 pheno.base=read.table("pheno.base.txt")
 # Scale the base phenotype to mean 0, sd 1
 pheno.base.scale=scale(pheno.base$V3)
@@ -464,7 +464,7 @@ The `--assoc` command in plink will produce p-values for a basic
 regression of phenotype on additive genotypic score.
 
 ```{bash}
-../bin/plink --bfile ../data/H938_Euro --pheno .../data/pheno.sim.txt --assoc --out H938_Euro_sim.pheno --noweb
+../bin/plink --bfile ../data/H938_Euro --pheno ../data/pheno.sim.txt --assoc --out H938_Euro_sim.pheno --noweb
 ```
 ### Exploring the results:  A Manhattan plot
 
