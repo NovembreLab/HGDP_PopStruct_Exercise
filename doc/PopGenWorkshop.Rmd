@@ -1,6 +1,4 @@
 
-# Testing
-
 # HGDP Population Structure Workshop
 
 ### Data-set
@@ -48,7 +46,7 @@ the individuals who are in the 6 Europan populations of the HGDP
 (Sardinian, Basque, Italian, Adygei, Orcadian, French).  Using plink we
 can extract just those individuals into a new set of plink files.
 
-```bash
+```{bash}
 awk '$3=="Sardinian"||$3=="Basque"||$3=="Italian"||$3=="Adygei"||$3=="Orcadian"||$3=="French"\
   {print $0}' H938.clst.txt > Euro.clst.txt
 plink --bfile H938 --keep Euro.clst.txt --make-bed --out H938_Euro
@@ -63,7 +61,7 @@ We also prepare a version of each data set in which we filter out
 sites that are in linkage disequilibrium using plink's pairwise
 genotypic LD filtering commands.
 
-```bash
+```{bash}
 plink --bfile H938 --indep-pairwise 50 10 0.1 --noweb
 plink --bfile H938 --extract plink.prune.in --make-bed --out H938.LDprune --noweb
 
@@ -88,7 +86,8 @@ To begin, run the plink `--hardy` command.  It formally
 tests for departures from Hardy-Weinberg proportions.  To keep the
 analysis simple, use the `--chr` command to limit the analysis to SNPs on chromosome 1.
 
-```bash
+```{bash}
+zcat ../data/H938.bed.gz > ../data/H938.bed
 plink --bfile ../data/H938 --hardy --chr 1 --out H938 --noweb
 ```
 
@@ -101,7 +100,7 @@ look at just across the whole sample (as we don't have
 cases/controls). The grep command will pull out only the output lines with "ALL"
 in the line.
 
-```bash
+```{bash}
 grep ALL H938.hwe > H938.hwe_reduced
 ```
 
@@ -113,7 +112,7 @@ actually the code plots only a sampling of 3000 SNPs to avoid an
 overloaded plot).  (Credits to Graham Coop for this function - see his
 lab blog <http://gcbias.org/> as a reference).
 
-```R
+```{R}
 plot.geno.vs.HW<-function(file,title=""){
 
 
@@ -160,7 +159,7 @@ plot.geno.vs.HW<-function(file,title=""){
 You can use this function directly in R to make a plot or you can produce,
 for example, a png graphic file with the plot, as shown below.
 
-```R
+```{R}
 png(file="HGDP_HWE.png")
 plot.geno.vs.HW(file="H938.hwe_reduced",title="HGDP")
 dev.off()
@@ -188,7 +187,7 @@ all 938 individuals for the full data problem).
 
 ### Computing and plotting a MAF frequency spectra
 
-```R
+```{R}
 file="H938.hwe_reduced"
 
 # Read in the HWE table and compute counts and allele frequencies
@@ -259,7 +258,7 @@ you may want to pull the results file from the `results/admixture` subdirectory.
 
 When the analysis is finished, you can plot the results in a simple way using the barplot function:
 
-```R
+```{R}
 # Read in matrix of inferred ancestry coefficients for each individual.
 Q=read.table("H938_Euro.LDprune.6.Q")
 Qmat=as.matrix(Q)
@@ -268,7 +267,7 @@ barplot(t(Qmat),col=c("red","blue","gold","orange","purple","brown"),border=NA,s
 Or as a better approach, read in the population
 id's of each individual and plot the individuals sorted by these identfiers:
 
-```R
+```{R}
 # To be able to label the graph we read in a
 # .clst file with population "cluster" labels for each indiv
 clst=read.table("../data/Euro.clst.txt")
@@ -345,21 +344,21 @@ We need to deal with a pesky smartpca issue that will cause it to
 ignore individuals in the `.fam` file if they are marked as missing in
 the phenotypes column.
 
-```bash
+```{bash}
 # Deal with pesky smartpca ignore issue by creating new .fam file
 awk '{print $1,$2,$3,$4,$5,1}' ../data/H938_Euro.LDprune.fam > ../data/H938_Euro.LDprune.PCA.fam
 ```
 
 Now run smartpca:
 
-```bash
+```{bash}
 smartpca -p H938_Euro.LDprune.par
 ```
 ### Plotting the results
 
 And make a plot of PC1 vs PC2.
 
-```R
+```{R}
 # Read in eigenvectors file
 PCA=read.table("H938_Euro.LDprune.eigs")
 names(PCA)=c("ID",paste("PC",(1:20),sep=""),"CaseControl")
@@ -400,7 +399,7 @@ of each eigenvalue normalized by the sum).
 1. Based on the proportion of the variation explained - there are a number of PCs that stand out as being more relevant for explaining variation. About how many?
 2. From your plots of PC1-PC8 you should see that the lower PCs seem to be picking up individual-level structure, isolating single individuals. At what PC does this first happen?
 
-```R
+```{R}
     eval=read.table("H938_Euro.LDprune.eval")
     plot(1:length(eval$V1),eval$V1/sum(eval$V1),xlab="PC",ylab="Eigenvalue")
 ```
@@ -434,7 +433,7 @@ a somewhat arbitrary base phenotypic value given by what population they are
 from (Adygei = 5, Basque = 2, Italian = 5, Sardinian = 0; French = 8;
 Orcadian = 10)
 
-```bash
+```{bash}
 awk '$3=="Adygei"{print $1,$2,5}\
      $3=="Basque"{print $1,$2,2}\
      $3=="Italian"{print $1,$2,5}\
@@ -447,7 +446,7 @@ awk '$3=="Adygei"{print $1,$2,5}\
 Now, using R, let's add some variation around this base value to
 produce individual-level phenotypes.  Note: Nothing genetic about this phenotype!
 
-```R
+```{R}
 pheno.base=read.table("pheno.base.txt")
 # Scale the base phenotype to mean 0, sd 1
 pheno.base.scale=scale(pheno.base$V3)
@@ -464,7 +463,7 @@ We will use the `pheno.sim.txt` as our phenotype file for mapping.
 The `--assoc` command in plink will produce p-values for a basic
 regression of phenotype on additive genotypic score.
 
-```bash
+```{bash}
 ../bin/plink --bfile ../data/H938_Euro --pheno .../data/pheno.sim.txt --assoc --out H938_Euro_sim.pheno --noweb
 ```
 ### Exploring the results:  A Manhattan plot
@@ -472,7 +471,7 @@ regression of phenotype on additive genotypic score.
 Read in the plink results contained in the `.qassoc` output file and
 make a Manhattan plot of the results.
 
-```R
+```{R}
 qassoc=read.table("H938_Euro_sim.pheno.qassoc",header=TRUE)
 
 # Make a Manhattan plot
@@ -491,7 +490,7 @@ abline(h=-log10(0.05/length(qassoc$SNP)),lty=2,col="gray")
 
 Inspect a table of the most extreme hits:
 
-```R
+```{R}
 print(qassoc[head(order(qassoc$P),n=20),])
 ```
 
@@ -506,7 +505,7 @@ print(qassoc[head(order(qassoc$P),n=20),])
 
 Use the following code in R to make a plot of the observed vs. expected p-values matched by quantile.
 
-```R
+```{R}
 # Read in the p-values
 qassoc=read.table("H938_Euro_sim.pheno.qassoc",header=TRUE)
 # Produce expected p-values from the null (i.e. perfectly uniformly
@@ -538,115 +537,3 @@ abline(h=-log10(0.05/length(qassoc$SNP)),lty=2,col="gray")
 2.  Consider how genomic control be applied in this situation to control population stratficiation.
 
 3.  Use the PCs you've computed already (or plink's MDS functions) to rerun the association test controlling for population stratification.
-
-## Answers
-
-
-#### HWE
-
-
-1.  Yes - the genotype frequencies roughly match Hardy-Weinberg
-    expectations in that the basic shapes of the curves are correct.  
-
-2.  There seems to be a deficiency of heterozygotes.  This is most
-    likely due to the hidden population structure here (via the Wahlund
-    effect introduced above).
-
-3.  The deficiency is much less - Europe has much less internal population
-    structure and thus the genotypes match the HW proportions very nicely.  One could inspect the distributionss of p-values of the associated formal tests of Hardy-Weinberg to more formally support these answers.
-
-#### AFS
-
-1.  There is an excess of common variants and paucity of rare
-    variants.
-
-2.  For most genotyping arrays used in human genetics, the design of the array is such that common variants are favored over rares when choosing which variants to probe.  This is usually because a small set of individuals was used for variant discovery, and as a result only variants sites with common alleles are discovered. 
-
-#### admixture
-
-
-1.  Yes - though the Sardinian population interesting has two ancestral populations.
-
-2.  No - the French and Italian individuals are each inferred to have
-    substantial ancestry from a single population.
-
-3.  The Sardinian population has two ancestral populations.
-
-#### PCA (Part A)
-
-1.  Yes - though the Orcadians don't separate from French and Italian
-    substantially until PC3.
-
-2. PC2 nearly separates the two though the
-    distinction is not as strong as for the population isolates and
-    there is still some overlap.
-
-3. PC5 separates out two groups of Sardinians.  It would be
-    interesting to find out how the HGDP sampled its Sardinians and
-    what may be the causes of this cryptic structure.
-
-4. Yes - both methods give the same general impression of the
-    structure within the sample, though in different form.
-
-#### PCA (Part B)
-
-1. The top 3 PCs appear qualitatively more important than the
-    remainder.  Note that in the plots by PC3 the major populations have been
-    separated and PC4, PC5 and lower PCs predominantly separate
-    individuals within each sample.
-
-2. PC6, PC7, and PC8 are picking out single Adygei individuals.  Perhaps
-    these are poorer quality samples or somehow else slightly
-    distinct from the rest of the sample.
-
-#### Population stratification in GWAS (Part A)
-
-1. The hits on chromosome 4, 6, 8 would be especially enticing no?
-
-#### Population stratification in GWAS (Part B)
-
-1. The HLA region!  Note this region is highly differentiated among
-    populations.
-
-2. If a SNP is highly differentiated and its pattern of
-    differentiation happens to mirror that of a phenotype, there will
-    be a spurious result obtained in a GWAS study.
-
-#### Population stratification in GWAS (Part C)
-
-1. Yes - the elevation of the p-values throughout the distribution
-    is indicative of a widespread startification problem.
-
-## Figures
-
-#### HWE
-
-![nil](../results_answerkey/HWE/HGDP_HWE.png)
-
-![nil](../results_answerkey/HWE/HGDP_Euro_HWE.png)
-
-#### AFS
-
-![nil](../results_answerkey/afs/afs.png)
-
-#### admixture
-
-![nil](../results_answerkey/admixture/admixture_plot2.png)
-
-#### PCA
-
-![nil](../results_answerkey/pca/pca_plot1.png)
-
-![nil](../results_answerkey/pca/pca_plot3.png)
-
-![nil](../results_answerkey/pca/pca_plot4.png)
-
-![nil](../results_answerkey/pca/pca_plot5.png)
-
-![nil](../results_answerkey/pca/pca_plot2.png)
-
-#### Population stratification in GWAS
-
-![nil](../results_answerkey/pop_strat_gwas/pop_strat_gwas_manhattanplot.png)
-
-![nil](../results_answerkey/pop_strat_gwas/pop_strat_gwas_qqplot.png)
