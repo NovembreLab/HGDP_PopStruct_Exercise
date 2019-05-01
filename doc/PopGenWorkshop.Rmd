@@ -1,3 +1,8 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
 
 # HGDP Population Structure Workshop
 
@@ -369,7 +374,7 @@ names(PCA)=c("ID",paste("PC",(1:20),sep=""),"CaseControl")
 ids=substr(PCA$ID,start=6,stop=20)
 
 # Read in clst table and fam file
-clst=read.table("../../data/Euro.clst.txt")
+clst=read.table("../data/Euro.clst.txt")
 # The list of countries as ordered in the fam file
 clst_unord=clst$V3[match(ids,clst$V2)]
 
