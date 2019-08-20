@@ -1,0 +1,12 @@
+### For the H938.clst.txt file that describes the individuals and their population labels, we build it in the following way:
+
+#1. Download the excel sheet with population labels here: www.cephb.fr/common/HGDPid_populations.xls.  
+#	Convert it into a tab-delimited file named “HGDP_ind2pop.txt” using excel.
+#	Save this as “HGDP_ind2pop.tsv” into ../raw_input/.
+
+#2. Cross-reference the 938 unrelated individual IDs from the H938.fam file and output a final file:
+cut -d" " -f2 ../raw_input/H938.fam > id.tmp
+while read l; do grep -w $l ../raw_input/HGDP_ind2pop.txt | cut -f3 >> subset.tmp; done < id.tmp
+cut -d" " -f1-2 ../raw_input/H938.fam | paste -d" " - subset.tmp > H938.clst.txt
+
+rm id.tmp subset.tmp

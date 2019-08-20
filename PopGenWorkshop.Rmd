@@ -259,7 +259,7 @@ admixture out/H938_Euro.LDprune.bed 8
 After running, `ADMIXTURE` produces two major output files.  The file with suffix `.P` contains an $L \times K$ table of the allele frequencies inferred for each SNP in each population.  The file with suffix `.Q` contains an $N \times K$ table of inferred individual ancestry proportions from the $K$ ancestral populations, with one row per individual. 
 
 For our example dataset with $K$=8, this will be a file called `H938.LDpruned.8.Q`. This file can be used to generate a plot showing individual ancestry. In `R`, this can be done using the following commands:
-```{r, eval = TRUE, fig.height=2.5, fig.width=7.5}
+```{r, eval = TRUE, fig.height = 2, fig.width = 8}
 library(RColorBrewer)
 getwd()
 tbl <- read.table("out/H938_Euro.LDprune.8.Q")
@@ -273,8 +273,12 @@ Each thin vertical line in the barplot represents one individual and each color 
 Or as a better approach, read in the population
 id's of each individual and plot the individuals sorted by these identfiers:
 
-```{r}
-plot.admixture.labeled <- function(clst_file, fam_file, q_file){
+```{r,fig.height=2,fig.width=8}
+
+#plot.admixture.labeled <- function(clst_file, fam_file, q_file){
+  clst_file = "out/Euro.clst.txt"
+  fam_file = "data/H938_Euro.fam"
+  q_file = "out/H938_Euro.LDprune.8.Q"
   #Read in the Qmatrix
   Q = read.table(q_file)
   Qmat = as.matrix(Q)
@@ -301,14 +305,12 @@ plot.admixture.labeled <- function(clst_file, fam_file, q_file){
   midpts=(breaks[1:(nbrks-1)]+breaks[2:nbrks])/2
   
   # Make the barplot
-  barplot(t(QmatO),col=c("red","blue","yellow","orange","purple","brown"),border=NA,space=0,inside=TRUE)
+  barplot(t(QmatO),col=c("red","blue","yellow","orange","purple","brown"),border=NA,space=0)
   abline(v=breaks,lwd=2)
   mtext(levels(clst_ord),side=1,at=midpts,las=2)
-}
-```
+#}
 
-```{r}
-plot.admixture.labeled("data/H938.clst.txt","data/H938_Euro.fam","out/H938_Euro.LDprune.8.Q")
+#plot.admixture.labeled("out/Euro.clst.txt","data/H938_Euro.LDprune.fam","out/H938_Euro.LDprune.8.Q")
 ```
 
 #### Questions
@@ -333,11 +335,11 @@ To run `pong` requires setting up a few files: 1) an `ind2pop` file that maps in
 
 ```{r, engine='bash',eval=FALSE}
 cut -d' ' -f3 out/Euro.clst.txt > out/H938_Euro.ind2pop
-FILEPREFIX=out/H938_Euro.LDPrune
+FILEPREFIX=H938_Euro.LDPrune
 K=8
 awk -v K=$K -v file=$FILEPREFIX 'BEGIN{ \
 printf("ExampleRun\t%d\t%s.%d.Q\n",K,file,K) 
-}' > $FILEPREFIX.Qfilemap 
+}' > out/$FILEPREFIX.Qfilemap 
 ```
 Note when building the `.Qfilemap` one needs to use tabs to seperate the columns for `pong` to read the file correctly.
 
@@ -675,7 +677,7 @@ a somewhat arbitrary base phenotypic value given by what population they are
 from (Adygei = 5, Basque = 2, Italian = 5, Sardinian = 0; French = 8;
 Orcadian = 10)
 
-```bash
+```{r, engine = 'bash', eval = FALSE}
 awk '$3=="Adygei"{print $1,$2,5}\
      $3=="Basque"{print $1,$2,2}\
      $3=="Italian"{print $1,$2,5}\
@@ -688,7 +690,7 @@ awk '$3=="Adygei"{print $1,$2,5}\
 Now, using R, let's add some variation around this base value to
 produce individual-level phenotypes.  Note: Nothing genetic about this phenotype!
 
-```R
+```{R}
 pheno.base=read.table("out/pheno.base.txt")
 # Scale the base phenotype to mean 0, sd 1
 pheno.base.scale=scale(pheno.base$V3)
@@ -713,7 +715,7 @@ plink --bfile data/H938_Euro --pheno out/pheno.sim.txt --assoc --out out/H938_Eu
 Read in the plink results contained in the `.qassoc` output file and
 make a Manhattan plot of the results.
 
-```R
+```{R}
 qassoc=read.table("out/H938_Euro_sim.pheno.qassoc",header=TRUE)
 
 # Make a Manhattan plot
@@ -732,7 +734,7 @@ abline(h=-log10(0.05/length(qassoc$SNP)),lty=2,col="gray")
 
 Inspect a table of the most extreme hits:
 
-```R
+```{R}
 print(qassoc[head(order(qassoc$P),n=20),])
 ```
 
@@ -747,7 +749,7 @@ print(qassoc[head(order(qassoc$P),n=20),])
 
 Use the following code in R to make a plot of the observed vs. expected p-values matched by quantile.
 
-```R
+```{R}
 # Read in the p-values
 qassoc=read.table("out/H938_Euro_sim.pheno.qassoc",header=TRUE)
 # Produce expected p-values from the null (i.e. perfectly uniformly
