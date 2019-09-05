@@ -3,9 +3,9 @@ title: "HGDP Population Structure Workshop"
 author: "John Novembre with contributions from Joe Marcus, Chi-Chun Liu, Kate Farris"
 date: August 18, 2019
 output:
-  pdf_document:
-    fig_caption: yes
   html_document:
+    fig_caption: yes
+  pdf_document:
     fig_caption: yes
 bibliography: doc/references.bib
 ---
@@ -14,12 +14,24 @@ bibliography: doc/references.bib
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.path='plot/',
                       echo=TRUE, eval=FALSE, warning=TRUE, message=TRUE)
+
+
 ```
 
+
+
 A note on dependencies: plink, admixture, R libraries: Rcolorbrewer, cowplot, PCAviz 
-For PCAviz: install.packages("devtools")
-devtools::install_github("NovembreLab/PCAviz",build_vignettes = TRUE)
+Run this cell once at the beginning of the workshop...
+```{r eval=FALSE, echo=FALSE}
+install.packages("RColorBrewer")
+
+install.packages("devtools")
+library(devtools)
+devtools::install_github("NovembreLab/PCAviz",build_vignettes = FALSE) # To save time we won't build vignettes but consider it for the future
+```
 # HGDP Population Structure Workshop
+=======
+# Introduction
 
 
 Population structure is a commonplace feature of genetic variation data, and it has importance in numerous application areas, including evolutionary genetics, conservation genetics, and human genetics.  At a broad level, population structure is the existence of differing levels of genetic relatedness among some subgroups within a sample.  This may arise for a variety of reasons, but a common cause is that samples have been drawn from geographically isolated groups or different locales across a geographic continuum. Regardless of the cause, understanding the structure in a sample is necessary before more sophisticated analyses are undertaken. For example, to infer divergence times between two populations requires knowing two populations even exist and which individuals belong to each.  
@@ -58,7 +70,8 @@ For running some simple examples below, we will first create a subset of the HGD
 awk '$3=="Adygei"||$3=="French_Basque"||$3=="French"|| $3=="North_Italian"||$3=="Orcadian"||$3=="Russian"||
 $3=="Sardinian"||$3=="Tuscan" {print $0}' data/H938.clst.txt > out/Euro.clst.txt
 
-plink --noweb --bfile data/H938 --keep out/Euro.clst.txt --make-bed --out out/H938_Euro
+DATADIRECTORY=data
+plink --noweb --bfile $DATADIRECTORY/H938 --keep out/Euro.clst.txt --make-bed --out out/H938_Euro
 ```
 
 
@@ -150,11 +163,11 @@ plot.geno.vs.HW<-function(file,title=""){
     }
 ```
 
-You can use this function directly in R to make a plot or you can produce,
-for example, a png graphic file with the plot, as shown below.
+Use this function now to make a plot... 
 
 ```{r,eval=TRUE}
 plot.geno.vs.HW(file="out/H938_Euro.LDprune.hwe",title="HGDP")
+
 ```
 
 
@@ -164,7 +177,7 @@ plot.geno.vs.HW(file="out/H938_Euro.LDprune.hwe",title="HGDP")
 
 2. Looking more carefully, is the HW prediction for the proportion of heterozygotes given allele frequency generally too high or too low relative to the empirically observed values? What might explain the deviation?
 
-3. [Option] Go through the same steps for the full H938 set of plink files. Compare the deficiency in heterozygotes between the world-wide data and the European only data. In which is the deficiency smaller? Why might that be the case?
+3. [SKIP] Now, go through the same steps for the full H938 set of plink files. Compare the deficiency in heterozygotes between the world-wide data and the European only data. In which is the deficiency smaller? Why might that be the case?
 
 ## Allele frequency spectra
 
@@ -238,11 +251,11 @@ This is SNP array data not sequencing data).
     
 ### Running `ADMIXTURE`
 
-Though, structure within Europe is subtle, we can run the program `admixture` on our set of 6 Euroepan sub-populations to explore the structure within it. 
+Though, structure within Europe is subtle, we can run the program `admixture` on our set of 8 European sub-populations to explore the structure within it. 
 
-The `ADMIXTURE` software (v 1.3.0 here) comes as a pre-compiled binary executable file for either Linux or Mac operating systems. To install, simply download the package and move the executable into your standard execution path (e.g. '/usr/local/bin' on many linux systems).  Once installed, it is straightforward to run `ADMIXTURE` with a fixed number of source populations, commonly readdenoted by $K$. For example, to get started let's run ADMIXTURE with $K$=8 as there are 8 distinctly labelled populations in the dataset:
+The `ADMIXTURE` software (v 1.3.0 here) comes as a pre-compiled binary executable file for either Linux or Mac operating systems. To install, simply download the package and move the executable into your standard execution path (e.g. '/usr/local/bin' on many linux systems).  Once installed, it is straightforward to run `ADMIXTURE` with a fixed number of source populations, commonly denoted by $K$. For example, to get started let's run ADMIXTURE with $K$=8 as there are 8 distinctly labelled populations in the dataset (Note: this command takes about 15 minutes to run):
 ```{r, engine = 'bash', eval = FALSE}
-admixture out/H938_Euro.LDprune.bed 8
+admixture H938_Euro.LDprune.bed 8
 ```    
 `ADMIXTURE` is a maximum-likelihood based method, so as the method runs, you will see updates to the log-likelihood as it converges on a solution for the ancestry proportions and allele frequencies that maximize the likelhood function.  The algorithm will stop when the difference between successive iterations is small (the 'delta' value takes a small value).  A final output is an estimated $F_{ST}$ value [@Kent09] between each of the source populations, based on the inferred allele frequencies.  These estimates reflect how differentiated the source populations are, which is important for understanding whether the population structure observed in a sample is substantial or not (values closer to 0 reflect less population differentiation).  For this dataset, it should take about 75 iterations to finish. 
 
@@ -250,7 +263,7 @@ After running, `ADMIXTURE` produces two major output files.  The file with suffi
 
 For our example dataset with $K$=8, this will be a file called `H938.LDpruned.8.Q`. This file can be used to generate a plot showing individual ancestry. In `R`, this can be done using the following commands:
 ```{r,fig.height=4,fig.width=8,eval=TRUE}
-
+library(RColorBrewer)
 clst_file = "out/Euro.clst.txt"
 fam_file = "out/H938_Euro.fam"
 q_file = "out/H938_Euro.LDprune.8.Q"
@@ -284,7 +297,6 @@ barplot(t(QmatO),col=brewer.pal(8,"Set1"),border=NA,space=0)
 abline(v=breaks,lwd=2)
 mtext(levels(clst_ord),side=1,at=midpts,las=2)
 ```
-
 
 Each thin vertical line in the barplot represents one individual and each color represents one inferred ancestral population. The length of each color in a vertical bar represents the proportion of that individual's ancestry that is derived from the inferred ancestral population corresponding to that color. The above image suggests there are some genetic clusters in the data, but it's not a well organized data display. 
 
@@ -330,7 +342,8 @@ Here's  an example of what you should see:
 
 From this visualization we can see the admixture model fits most individuals of the Adygei, Orcadian, and Russian samples as being derived each from a single source population (represented by orange, green, and blue respectively); the Sardinian and the French Basque samples are modeled as comprising individuals from two source populations each (yellow/red for Sardinia, brown/pink for French Basque); and the French, Tuscan, and North Italian samples are generally estimated to have a majority component of ancestry from a single source population ('purple') though with notable admixture with other sources.  A first conclusions is that the population labels do not capture the complexity of the population structure.  There is apparent cryptic structure within some samples (e.g., Sardinia) and minimal differentiation between other samples (North Italian and Tuscan samples for instance).  
 
-We can run ADMIXTURE multiple times with -s flag specifying random seeds. This is useful determining if ADMIXTURE finds global optima. Pong summarizes modality and provides `check to highlight multimodality` checkbox whitening populations with ancestry matrices agreeing the mode. One can also click on and visualize only one cluster.  
+
+We can run ADMIXTURE multiple times with -s flag specifying random seeds. This is useful determining if ADMIXTURE finds global optima. Pong summarizes modality and provides a `check to highlight multimodality` checkbox whitening populations with ancestry matrices agreeing with the mode. One can also click on and visualize only one cluster.
 
 (NOTE: To save time, use the exisiting results files and skip this next code block which runs admxiture several times.)  
 ```{r, engine='bash',eval=FALSE}
@@ -462,10 +475,10 @@ As a minor issue, `smartpca` ignores individuals in the `.fam` file if they are 
 ```{r, engine = 'bash', eval = FALSE}
 awk '{print $1,$2,$3,$4,$5,1}' out/H938_Euro.LDprune.fam > out/H938_Euro.LDprune.PCA.fam
 ```
-Now run `smartpca` with the following command. 
+Now run `smartpca` with the following command (takes about 10 seconds). 
     
 ```{r, engine = 'bash', eval = FALSE}
-smartpca -p ./out/H938_Euro.LDprune.par
+bin/smartpca -p ./out/H938_Euro.LDprune.par
 ```   
 You will find the output files in the `out` sub-directory as specified in the parameter file.
 
@@ -473,7 +486,9 @@ You will find the output files in the `out` sub-directory as specified in the pa
 
 And make a plot of PC1 vs PC2.
 
-```{r, eval=TRUE}
+
+```{r, eval=TRUE,echo=FALSE}
+
 # Read in eigenvectors file
 PCA=read.table("out/H938_Euro.LDprune.eigs")
 names(PCA)=c("ID",paste("PC",(1:20),sep=""),"CaseControl")
@@ -511,6 +526,7 @@ The following command in `R` generates plots showing each individual sample's po
 
 ```{r, eval = TRUE, echo=TRUE, results='hide',warning=FALSE,message=FALSE, fig.height=10,fig.width=10}
 library(PCAviz)
+library(ggplot2)
 library(cowplot)
 prefix="out/H938_Euro.LDprune"
 nPCs = 20
@@ -685,11 +701,10 @@ We will use the `pheno.sim.txt` as our phenotype file for mapping.
 ### Map the trait using plink mapping functions
 
 The `--assoc` command in plink will produce p-values for a basic
-regression of phenotype on additive genotypic score.
+regression of phenotype on additive genotypic score. (< 10 sec)
 
 ```{r, engine='bash',eval=FALSE}
 plink --bfile data/H938_Euro --pheno out/pheno.sim.txt --assoc --out out/H938_Euro_sim.pheno --autosome
-
 ```
 ### Exploring the results:  A Manhattan plot
 
@@ -716,6 +731,7 @@ abline(h=-log10(0.05/length(qassoc$SNP)),lty=2,col="gray")
 Inspect a table of the most extreme hits:
 
 ```{r, eval=TRUE}
+options(width=100)
 print(qassoc[head(order(qassoc$P),n=20),])
 ```
 
@@ -743,8 +759,7 @@ SNPorder=order(-log10(qassoc$P),decreasing=TRUE)
 # Plot the p-values against against each other (Note: we do for only
 # the top 150K SNPs to make the number of points plotted smaller)
 qmax=max(-log10(qassoc$P),na.rm=TRUE)
-plot(-log10(Unif[logUnifOrder][1:150e3]),-log10(qassoc$P[SNPorder][1:150e3]),pch=16,cex=0.5,xlab="-log(p)
-Expected",ylab="-log(p) Observed",,ylim=c(0,qmax));
+plot(-log10(Unif[logUnifOrder][1:150e3]),-log10(qassoc$P[SNPorder][1:150e3]),pch=16,cex=0.5,xlab="-log(p) Expected",ylab="-log(p) Observed",,ylim=c(0,qmax));
 # put in a line for the expected relationship (y=x)
 abline(0,1);
 # Put in a line for a Bonferroni correction (0.05 / length(qassoc$SNP)
