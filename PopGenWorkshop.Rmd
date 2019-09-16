@@ -29,8 +29,11 @@ library(cowplot)
 ```
 
 ```{r eval=FALSE, echo = FALSE}
-install.packages("devtools")
+tryCatch({
 library(devtools)
+},error = function(err){
+  install.packages("devtools")
+})
 devtools::install_github("NovembreLab/PCAviz",build_vignettes = FALSE) # To save time we won't build vignettes but consider it for the future
 ```
 # HGDP Population Structure Workshop
@@ -269,7 +272,7 @@ For our example dataset with $K$=8, this will be a file called `H938.LDpruned.8.
 ```{r,fig.height=4,fig.width=8,eval=TRUE}
 library(RColorBrewer)
 clst_file = "out/Euro.clst.txt"
-fam_file = "out/H938_Euro.fam"
+fam_file = "data/H938_Euro.fam"
 q_file = "out/H938_Euro.LDprune.8.Q"
 #Read in the Qmatrix
 Q = read.table(q_file)
@@ -317,7 +320,7 @@ Each thin vertical line in the barplot represents one individual and each color 
 
 2.  Create worldwide pruned LD data and run with K=6 or K=7 (i.e. revisiting Rosenberg's classic paper). [Note : this will take a while, best to run it on your own computer, or use a different algorithm like `teraStructure`]
 
-### Exploring ADMIXTURE results with the PONG software [Optional]
+### Exploring ADMIXTURE results with the PONG software [Skip]
 
 
 To improve the visualization, one can use a package dedicated to plotting ancestry proportions [@Rosenberg04; @Kopelman15; @Behr16]. Here we use a post-processing tool `pong` [@Behr16], which visualizes individual ancestry with similarity between individuals within clusters. You will most likely want to install 'pong' on a local machine as it initializes a local web server to display the results.  
@@ -665,7 +668,7 @@ Our protocol above is relatively straightfoward and presents the most basic impl
 Two broad perspecives we find helpful useful to keep in mind are: 1) How the admixture model and PCA framework are related to each other indirectly as different forms of sparse factor analyss [@Engelhardt10]; 2) How the PCA framework in particular can be considered as a form of efficient data compression.  Both of these perspectives can be helpful in interpreting the outputs of the methods and for appreciating how these approaches best serve as helpful visual exploratory tools for analyzing structure in genetic data.  These methods are ultimately relatively simple statistical tools being used to summarize complex realities.  They are part of the toolkit for analysis, and often are extremely useful for framing specific models of population structure that can be further investigated using more detailed and explicit approaches.
 
 
-## Demonstration of spurious association due to population structure [Take-Home]
+## Demonstration of spurious association due to population structure [Time-permitting]
 
 One consequence of population structure is that it can cause spurious
 associations with phenotypes.  In this exercise you will generate a
