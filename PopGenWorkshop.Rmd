@@ -1,7 +1,7 @@
 ---
 title: "HGDP Population Structure Workshop"
 author: "John Novembre with contributions from Joe Marcus, Chi-Chun Liu, Kate Farris"
-date: August 18, 2019
+date: "August 18, 2019"
 output:
   html_document:
     fig_caption: yes
@@ -22,19 +22,24 @@ knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.path='plot/',
 
 A note on dependencies: plink, admixture, R libraries: Rcolorbrewer, cowplot, PCAviz 
 Run this cell once at the beginning of the workshop...
-```{r eval = TRUE, echo = FALSE}
+```{r eval = TRUE, echo = FALSE, warning = FALSE, message = FALSE}
 library(RColorBrewer)
 library(ggplot2)
 library(cowplot)
 ```
 
-```{r eval=FALSE, echo = FALSE}
+```{r}
 tryCatch({
-library(devtools)
+  library(devtools)
 },error = function(err){
   install.packages("devtools")
 })
-devtools::install_github("NovembreLab/PCAviz",build_vignettes = FALSE) # To save time we won't build vignettes but consider it for the future
+tryCatch({
+library(PCAviz)
+},error = function(err){
+  install.packages("devtools")
+  devtools::install_github("NovembreLab/PCAviz",build_vignettes = FALSE)
+})
 ```
 # HGDP Population Structure Workshop
 =======
@@ -124,7 +129,7 @@ actually the code plots only a sampling of 3000 SNPs to avoid an
 overloaded plot).  (Credit to Graham Coop for this specific function - see his
 lab blog <http://gcbias.org/> as a reference).
 
-```{r,eval=TRUE}
+```{r, eval = TRUE}
 plot.geno.vs.HW<-function(file,title=""){
 
 	#read in the HW file from plink
@@ -172,7 +177,7 @@ plot.geno.vs.HW<-function(file,title=""){
 
 Use this function now to make a plot... 
 
-```{r,eval=TRUE}
+```{r}
 plot.geno.vs.HW(file="out/H938_Euro.LDprune.hwe",title="HGDP")
 
 ```
@@ -239,7 +244,7 @@ plot.MAF <- function(file){
 }
 ```
 
-```{r,eval=TRUE}
+```{r}
 plot.MAF("out/H938.hwe_reduced")
 ```
 
@@ -298,7 +303,9 @@ clst_ord=clst_unord[ordered_indices]
 breaks=c(0,which(clst_ord[1:(n-1)]!=clst_ord[2:n]),n)
 nbrks=length(breaks)
 midpts=(breaks[1:(nbrks-1)]+breaks[2:nbrks])/2
+```
 
+``````{r,fig.height=4,fig.width=8}
 # Make the barplot
 barplot(t(QmatO),col=brewer.pal(8,"Set1"),border=NA,space=0)
 abline(v=breaks,lwd=2)
@@ -344,9 +351,8 @@ pong -m out/H938_Euro.LDprune.Qfilemap -i out/H938_Euro.ind2pop
 ```       
 and open a web browser to `http://localhost:4000/` to view the results. 
 
-Here's  an example of what you should see:
-
-![Example PONG output](./plot/H938_Euro.LDprune.K8.png)
+<!-- Here's  an example of what you should see:
+![Example PONG output](./plot/H938_Euro.LDprune.K8.png) --->
 
 From this visualization we can see the admixture model fits most individuals of the Adygei, Orcadian, and Russian samples as being derived each from a single source population (represented by orange, green, and blue respectively); the Sardinian and the French Basque samples are modeled as comprising individuals from two source populations each (yellow/red for Sardinia, brown/pink for French Basque); and the French, Tuscan, and North Italian samples are generally estimated to have a majority component of ancestry from a single source population ('purple') though with notable admixture with other sources.  A first conclusions is that the population labels do not capture the complexity of the population structure.  There is apparent cryptic structure within some samples (e.g., Sardinia) and minimal differentiation between other samples (North Italian and Tuscan samples for instance).  
 
@@ -380,7 +386,7 @@ pong -m out/${prefix}.multiplerun.Qfilemap -s .99 -i out/H938_Euro.ind2pop
 ```
 
 
-![Visualizing multiple runs of ADMIXTURE](./plot/pong_multiplerun.png)
+<!-- ![Visualizing multiple runs of ADMIXTURE](./plot/pong_multiplerun.png) -->
 
 Here inferred ancestry components for North Italian are different across multiple runs of ADMIXTURE.
 
@@ -427,7 +433,7 @@ done
 ```     
 
 Now let's inspect the outputs.  First let's make a plot of the cross-validation error as a function of $K$:
-```{r, eval = TRUE, fig.width=3.25, fig.height=3}
+```{r, fig.width=3.25, fig.height=3}
 tbl = read.table("out/H938_Euro.LDprune.CV.txt")
 names(tbl) <- c( "K", "Error")
 
@@ -441,7 +447,7 @@ What do you see for the cross-validation error versus K?  Usually, the cross-val
 pong -m out/H938_Euro.LDprune.Qfilemap -i out/H938_Euro.ind2pop
 ```  
 
-![Example PONG output](./plot/mainviz_2018-9-13_13h10m14s_pong.png)
+<!--- ![Example PONG output](./plot/mainviz_2018-9-13_13h10m14s_pong.png) -->
 
 Here we see how as $K$ increases through to $K=6$, the Sardinian, French Basque, Adygei, and Russian samples are modeled as descended from unique sources, at $K=7$ and $K=8$ structure within the Sardinian and Basque samples is revealed, though the Basque sub-structure is not stable at higher values of $K$.  The values of $K=9$ and above make increasingly finer scale divisions that are difficult to interpret.  
 
@@ -499,7 +505,7 @@ You will find the output files in the `out` sub-directory as specified in the pa
 
 For use in R, let's read in the PCA data as a dataframe... 
 
-```{r, eval=TRUE,echo=TRUE}
+```{r}
 
 prefix = "out/H938_Euro.LDprune"
 nPCs = 20 
@@ -536,7 +542,7 @@ names(PCA)[nPCs+2] <- "sample"
 ### Simple plots of the results
 
 And make a simple plot...
-```{r, eval = TRUE, echo = TRUE}
+```{r}
 ggplot(data = PCA, aes(x = PC1, y = PC2, label = abbrev, color = abbrev)) + geom_text()
 ```
 
@@ -544,14 +550,10 @@ This plot is nice but the legend is awkward, the French and French Basque were c
 
 
 #### Plotting PCA results with PCAviz
-The PCAviz package can be found at https://github.com/NovembreLab/PCAviz. It provides a simple interface for quickly creating plots from PCA results. It encodes several of our favored best practices for plotting PCA (such as using abberviations for point characters and plotting median positions of each labelled group).  If you didn't do this above, to install the package use:
-```{r, eval=FALSE,echo=TRUE}
-install.packages("devtools")
-devtools::install_github("NovembreLab/PCAviz",build_vignettes = TRUE)
-```
+The PCAviz package can be found at https://github.com/NovembreLab/PCAviz. It provides a simple interface for quickly creating plots from PCA results. It encodes several of our favored best practices for plotting PCA (such as using abberviations for point characters and plotting median positions of each labelled group).  (If you didn't already, see the top of this file for installation help with PCAviz). 
 
 We first need to create a PCAviz object.  We use the `PCA` dataframe defined above.  Crucially, the sample IDs need to be in the next column after the actual numeric PC values.
-```{r, eval = TRUE, echo=TRUE, results='hide',warning=FALSE,message=FALSE, fig.height=6,fig.width=8}
+```{r, results='hide',warning=FALSE,message=FALSE, fig.height=6,fig.width=8}
 library(PCAviz)
 
 # Build the PCAviz object
@@ -562,12 +564,12 @@ hgdp <- pcaviz_abbreviate_var(hgdp,"sample")
 
 The default plot method with PCAviz generates a plot showing each individual sample's position in the PCA space and the median position of each labelled group in PCA space:
 
-```{r, eval = TRUE, echo=TRUE, results='hide',warning=FALSE,message=FALSE, fig.height=6,fig.width=8}
+```{r, results='hide',warning=FALSE,message=FALSE, fig.height=6,fig.width=8}
 plot(hgdp)
 ```
 
 Make a set of plots... 
-```{r, eval = TRUE, echo=TRUE, results='hide',warning=FALSE,message=FALSE, fig.height=6,fig.width=8}
+```{r, results='hide',warning=FALSE,message=FALSE, fig.height=6,fig.width=8}
 
 # Customize 
 geom.point.summary.params = list(shape = 16,stroke = 1,size = 7,
@@ -597,13 +599,13 @@ plot_grid(plot1, plot2, plot3, plot_legend, labels = list("A","B","C",""))
 First one may notice several populations are separated with PC1 and PC2, with the more isolated populations being those that were most distinguished from the others by `ADMIXTURE`. PC4 distinguishes a subset of Orcadian individuals and PC5 distinguishes two Adygei indiviuals.  PC6 corresponds to the cryptic structure observed within Sardinians in the `ADMIXTURE` analysis. 
 
 As an alternative visualization it can be helpful to see the distribution of PC coordinates per population for each labelled group in the data:
-```{r, eval = TRUE,fig.height=8,fig.width=4}
+```{r, fig.height=8,fig.width=4}
 pcaviz_violin(hgdp,pc.dims =paste0("PC", c(1:6)),plot.grid.params = list(nrow = 3))
 ```
 
 As mentioned above in the section on LD, it is useful to inspect the PC loadings to ensure that they broadly represent variation across the genome, rather than one or a small number of genomic regions [@Duforet-Frebourg16]. SNPs that are selected in the same direction as genome-wide structure can show high loadings, but what is particularly pathological is if the only SNPs that show high loadings are all concentrated in a single region of the genome, as might occur if the PCA is explaining genomic structure (such as an inversion) rather than population structure.
 
-```{r, eval = TRUE, fig.height=6, fig.width=8}
+```{r, fig.height=6, fig.width=8}
 for (i in 1:5){
   plotname <- paste("plot",i,sep="")
   plot <- pcaviz_loadingsplot(hgdp,pc.dim=paste0("PC",i), 
@@ -625,7 +627,7 @@ plot_grid(prow, plot_legend, ncol = 1, rel_heights = c(1, .2))
 ```
 
 The proportion of total variance explained by each PC is a useful metric for understanding structure in a sample and for evaluating how many PCs one might want to include in downstream analyses. This can be computed as  $\lambda_i / \sum_{k} \lambda_k$, with $\lambda_i$ being eigenvalues in decreasing order, and is plotted below:
-```{r, eval = TRUE, echo=TRUE,warnings=FALSE,fig.width=3.25,fig.height=3}
+```{r, warnings=FALSE,fig.width=3.25,fig.height=3}
 screeplot(hgdp,type='pve')  + ylim(0,0.018) +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
       theme(axis.line = element_line(size = 1, linetype = "solid"))
@@ -700,7 +702,7 @@ awk '$3=="Adygei"{print $1,$2,5}\
 Now, using R, let's add some variation around this base value to
 produce individual-level phenotypes.  Note: Nothing genetic about this phenotype!
 
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 pheno.base=read.table("out/pheno.base.txt")
 # Scale the base phenotype to mean 0, sd 1
 pheno.base.scale=scale(pheno.base$V3)
@@ -725,7 +727,7 @@ plink --bfile data/H938_Euro --pheno out/pheno.sim.txt --assoc --out out/H938_Eu
 Read in the plink results contained in the `.qassoc` output file and
 make a Manhattan plot of the results.
 
-```{r, eval=TRUE}
+```{r}
 qassoc=read.table("out/H938_Euro_sim.pheno.qassoc",header=TRUE)
 
 # Make a Manhattan plot
@@ -744,7 +746,7 @@ abline(h=-log10(0.05/length(qassoc$SNP)),lty=2,col="gray")
 
 Inspect a table of the most extreme hits:
 
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 options(width=100)
 print(qassoc[head(order(qassoc$P),n=20),])
 ```
@@ -760,7 +762,7 @@ print(qassoc[head(order(qassoc$P),n=20),])
 
 Use the following code in R to make a plot of the observed vs. expected p-values matched by quantile.
 
-```{r,eval=TRUE}
+```{r}
 # Read in the p-values
 qassoc=read.table("out/H938_Euro_sim.pheno.qassoc",header=TRUE)
 # Produce expected p-values from the null (i.e. perfectly uniformly
