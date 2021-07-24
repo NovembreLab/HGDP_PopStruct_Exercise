@@ -1,4 +1,4 @@
-[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/jhmarcus/HGDP_PopStruct_Exercise/master)
+[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/NovembreLab/HGDP_PopStruct_Exercise/master)
 
 # HGDP_PopStruct_Exercise
 
