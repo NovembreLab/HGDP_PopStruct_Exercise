@@ -2,7 +2,9 @@
 title: "HGDP Population Structure Workshop"
 author: "John Novembre with contributions from Joe Marcus, Chi-Chun Liu, Kate Farris"
 date: "July, 2021"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 
