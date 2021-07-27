@@ -2,18 +2,13 @@
 title: "HGDP Population Structure Workshop"
 author: "John Novembre with contributions from Joe Marcus, Chi-Chun Liu, Kate Farris"
 date: "July, 2021"
-  output:
-  html_document:
-    fig_caption: yes
-  pdf_document:
-    fig_caption: yes
-bibliography: doc/references.bib
+#bibliography: doc/references.bib
 ---
 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.path='plot/',
-                      echo=TRUE, eval=TRUE, warning=TRUE, message=TRUE)
+                      echo=TRUE, eval=FALSE, warning=TRUE, message=TRUE)
 
 
 ```
@@ -28,7 +23,7 @@ Run this cell once at the beginning of the workshop...
 library(RColorBrewer)
 library(ggplot2)
 library(cowplot)
-library(rshape2)
+library(tidyr)
 ```
 
 ```{r, eval=FALSE}
