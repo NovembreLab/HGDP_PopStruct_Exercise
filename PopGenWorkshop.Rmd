@@ -320,7 +320,7 @@ To improve the visualization, one can use a package dedicated to plotting ancest
 To run `pong` requires setting up a few files: 1) an `ind2pop` file that maps individuals to populations; 2) a `Qfilemap` file that points `pong` towards which '.Q' files to display; These are easy to build up from the command-line using the `Euro.clst.txt` file we built above, and an `awk` command to output tab-seperated text to a file with the `Qfilemap` suffix added to whatever file prefix we're using to organize our runs:
 
 ```{r, engine='bash',eval=FALSE}
-cut -d' ' -f3 data/Euro.clst.txt > out/H938_Euro.ind2pop
+cut -d' ' -f3 out_prep/Euro.clst.txt > out/H938_Euro.ind2pop
 FILEPREFIX=H938_Euro.LDprune
 K=8
 
