@@ -39,7 +39,6 @@ tryCatch({
 tryCatch({
 library(PCAviz)
 },error = function(err){
-  install.packages("devtools")
   devtools::install_github("NovembreLab/PCAviz",build_vignettes = FALSE)
 })
 ```
@@ -83,10 +82,10 @@ For running some simple examples below, we will first create a subset of the HGD
 
 ```{r, engine = 'bash', eval = FALSE}
 awk '$3=="Adygei"||$3=="French_Basque"||$3=="French"|| $3=="North_Italian"||$3=="Orcadian"||$3=="Russian"||
-$3=="Sardinian"||$3=="Tuscan" {print $0}' data/H938.clst.txt > out/Euro.clst.txt
+$3=="Sardinian"||$3=="Tuscan" {print $0}' data/H938.clst.txt > data/Euro.clst.txt
 
 DATADIRECTORY=data
-plink --noweb --bfile $DATADIRECTORY/H938 --keep out/Euro.clst.txt --make-bed --out out/H938_Euro
+plink --noweb --bfile $DATADIRECTORY/H938 --keep data/Euro.clst.txt --make-bed --out data/H938_Euro
 ```
 
 
@@ -95,9 +94,9 @@ plink --noweb --bfile $DATADIRECTORY/H938 --keep out/Euro.clst.txt --make-bed --
 SNPs in high LD with each other contain redundant information. This is not problematic in and of itself but there is the potential for some regions of the genome to have a disproportionate influence on the results and thus distort the representation of genome-wide structure.  A nice empirical example of the problem is in Figure 5 of Tian et al [@Tian2008aa], where PC2 of the genome-wide data is shown to be reflecting the variation in a 3.8Mb region of chromosome 8 that is known to harbor an inversion. A standard approach to address this issue is to filter out SNPs based on pairwise LD to produce a reduced set of more independent markers.  Here we use `plink`'s commands to produce a new LD-pruned dataset with output prefix `H938_Euro.LDpruned` and limiting our analyses to just the automsomes.  The approach considers a chromosomal window of 50 SNPs at a time, and for any pair whose genotypes have an association $r^2$ value greater than 0.1, it removes a SNP from the pair.  Then the window is shifted by 10 SNPs and the procedure is repeated:  
 
 ```{r, engine = 'bash', eval = FALSE}
-bin/plink --noweb --bfile out/H938_Euro --autosome --indep-pairwise 50 10 0.1
+bin/plink --noweb --bfile data/H938_Euro --autosome --indep-pairwise 50 10 0.1
 
-bin/plink --noweb --bfile out/H938_Euro --autosome --extract plink.prune.in --make-bed --out out/H938_Euro.LDprune
+bin/plink --noweb --bfile data/H938_Euro --autosome --extract plink.prune.in --make-bed --out data/H938_Euro.LDprune
 ```
 
 [Advanced note: For particularly sensitive results, we recommend additional rounds of SNP filtering based on observed principal component loadings and/or population differentiation statistics. For example, a robust approach is to filter out large windows around any SNP that has a high PC loading in an initial PCA analysis, see @Novembre08b].
@@ -118,7 +117,7 @@ tests for departures from Hardy-Weinberg proportions.  To keep the
 analysis simple, use the `--chr` command to limit the analysis to SNPs on chromosome 15.
 
 ```{r, engine = 'bash', eval = FALSE}
-plink --bfile out/H938_Euro.LDprune --hardy --chr 2 --out out/H938_Euro.LDprune
+plink --bfile data/H938_Euro.LDprune --hardy --chr 2 --out data/H938_Euro.LDprune
 ```
 
 Next, you are going to read the output of this command into R and visually
@@ -280,7 +279,7 @@ After running, `ADMIXTURE` produces two major output files.  The file with suffi
 For our example dataset with $K$=8, this will be a file called `H938.LDpruned.8.Q`. This file can be used to generate a plot showing individual ancestry. In `R`, this can be done using the following commands:
 ```{r,fig.height=4,fig.width=8,eval=TRUE}
 library(RColorBrewer)
-clst_file = "out/Euro.clst.txt"
+clst_file = "data/Euro.clst.txt"
 fam_file = "data/H938_Euro.fam"
 q_file = "out/H938_Euro.LDprune.8.Q"
 #Read in the Qmatrix
@@ -331,14 +330,14 @@ Each thin vertical line in the barplot represents one individual and each color 
 
 2.  Refilter the dataset to create a worldwide sampe and run it with K=6 or K=7. 
 
-### Exploring ADMIXTURE results with the PONG software [Skip]
+### Exploring ADMIXTURE results with the PONG software [Optional]
 
 To improve the visualization, one can use a package dedicated to plotting ancestry proportions [@Rosenberg04; @Kopelman15; @Behr16]. Here we use a post-processing tool `pong` [@Behr16], which visualizes individual ancestry with similarity between individuals within clusters. You will most likely want to install 'pong' on a local machine as it initializes a local web server to display the results.  
 
 To run `pong` requires setting up a few files: 1) an `ind2pop` file that maps individuals to populations; 2) a `Qfilemap` file that points `pong` towards which '.Q' files to display; These are easy to build up from the command-line using the `Euro.clst.txt` file we built above, and an `awk` command to output tab-seperated text to a file with the `Qfilemap` suffix added to whatever file prefix we're using to organize our runs:
 
 ```{r, engine='bash',eval=FALSE}
-cut -d' ' -f3 out/Euro.clst.txt > out/H938_Euro.ind2pop
+cut -d' ' -f3 data/Euro.clst.txt > out/H938_Euro.ind2pop
 FILEPREFIX=H938_Euro.LDprune
 K=8
 
@@ -370,7 +369,7 @@ K=8
 # Run admiixture multiple times with K fixed 
 for r in {1..10}
 do
-  admixture -s ${RANDOM} out/H938_Euro.LDprune.bed $K
+  admixture -s ${RANDOM} data/H938_Euro.LDprune.bed $K
   mv out/${prefix}.${K}.Q out/${prefix}.K${K}r${r}.Q
 done
 
@@ -405,7 +404,7 @@ Khigh=12
 
 for ((K=$Klow;K<=$Khigh;K++)); \
 do 
-  admixture --cv out/$prefix.bed $K | tee log.$prefix.${K}.out; 
+  admixture --cv data/$prefix.bed $K | tee log.$prefix.${K}.out; 
 done
 ```
 Then let's compile results on cross-validation error across values of K:
@@ -474,9 +473,9 @@ Comparing ADMIXTURE and PCA results often helps give insight and confirmation re
 
 ```{r, engine = 'bash', eval = FALSE}
 PREFIX=H938_Euro.LDprune
-echo genotypename: out/$PREFIX.bed > out/$PREFIX.par
-echo snpname: out/H938_Euro.LDprune.bim >> out/$PREFIX.par
-echo indivname: out/H938_Euro.LDprune.PCA.fam >> out/$PREFIX.par
+echo genotypename: data/$PREFIX.bed > out/$PREFIX.par
+echo snpname: data/H938_Euro.LDprune.bim >> out/$PREFIX.par
+echo indivname: data/H938_Euro.LDprune.PCA.fam >> out/$PREFIX.par
 echo snpweightoutname: out/H938_Euro.LDprune.snpeigs >> out/$PREFIX.par
 echo evecoutname: out/H938_Euro.LDprune.eigs >> out/$PREFIX.par
 echo evaloutname: out/H938_Euro.LDprune.eval >> out/$PREFIX.par
@@ -495,7 +494,7 @@ This input parameter file runs `smartpca` in its most basic mode (i.e. no automa
 As a minor issue, `smartpca` ignores individuals in the `.fam` file if they are marked as missing in the phenotypes column. This `awk` command provides a new `.fam` file that will automatically include all individuals.
     
 ```{r, engine = 'bash', eval = FALSE}
-awk '{print $1,$2,$3,$4,$5,1}' out/H938_Euro.LDprune.fam > out/H938_Euro.LDprune.PCA.fam
+awk '{print $1,$2,$3,$4,$5,1}' data/H938_Euro.LDprune.fam > data/H938_Euro.LDprune.PCA.fam
 ```
 Now run `smartpca` with the following command (takes about 10 seconds). 
     
@@ -533,7 +532,7 @@ ids = tmp[seq(2,length(tmp),by=2)]
 PCA$ID = ids
 
 # Read in the group/cluster labels and assign abbreviation labels
-clst = read.table("out/Euro.clst.txt")
+clst = read.table("data/Euro.clst.txt")
 clst_unord = clst$V3[match(ids,clst$V2)]  # Order them to match the ids of PCA object
 abbrev = substr(clst_unord,1,2) # Build simple-minded abbreviations
 PCA = as.data.frame(PCA)
@@ -692,7 +691,7 @@ awk '$3=="Adygei"{print $1,$2,5}\
     $3=="French"{print $1,$2,8}\
     $3=="Orcadian"{print $1,$2,10}\
      $3=="Russian"{print $1,$2,4}' \
-    out/Euro.clst.txt > out/pheno.base.txt
+    data/Euro.clst.txt > out/pheno.base.txt
 ```
 
 Now, using R, let's add some variation around this base value to
