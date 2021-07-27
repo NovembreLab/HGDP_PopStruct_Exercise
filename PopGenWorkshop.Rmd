@@ -2,7 +2,7 @@
 title: "HGDP Population Structure Workshop"
 author: "John Novembre with contributions from Joe Marcus, Chi-Chun Liu, Kate Farris"
 date: "July, 2021"
-#bibliography: doc/references.bib
+output: pdf_document
 ---
 
 
@@ -113,7 +113,7 @@ tests for departures from Hardy-Weinberg proportions.  To keep the
 analysis simple, use the `--chr` command to limit the analysis to SNPs on chromosome 15.
 
 ```{r, engine = 'bash', eval = FALSE}
-plink --bfile data/H938_Euro.LDprune --hardy --chr 2 --out data/H938_Euro.LDprune
+plink --bfile data/H938_Euro.LDprune --hardy --chr 15 --out data/H938_Euro.LDprune
 ```
 
 Next, you are going to read the output of this command into R and visually
@@ -162,7 +162,7 @@ ggplot.geno.vs.HW<-function(file,title=""){
 Use this function now to make a plot... 
 
 ```{r}
-gp <- ggplot.geno.vs.HW("out/H938_Euro.hwe_reduced")
+gp <- ggplot.geno.vs.HW("out/H938_Euro.LDprune.hwe")
 gp
 ```
 
@@ -229,7 +229,7 @@ plot.MAF <- function(file){
 ```
 
 ```{r}
-plot.MAF("out/H938.hwe")
+plot.MAF("out/H938_Euro.LDprune.hwe")
 ```
 
 #### Questions
